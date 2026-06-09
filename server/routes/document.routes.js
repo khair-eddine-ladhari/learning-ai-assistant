@@ -12,14 +12,21 @@ import {
 } from '../controllers/document.controller.js'
 import authMiddleware from '../middleware/auth.middleware.js'
 import upload from '../middleware/upload.middleware.js'
-
+import passport from '../middleware/passport.js'
 const router = express.Router()
 
-router.use(authMiddleware)   // all document routes are protected
+ // all document routes are protected
 
-router.post('/', upload.single('pdf'), uploadDocument)
-router.get('/', getDocuments)
-router.get('/:id', getDocument)
-router.delete('/:id', deleteDocument)
+router.post('/', upload.single('pdf'), passport.authenticate('jwt', { session: false }),
+authMiddleware(['admin', 'user']), uploadDocument)
+
+router.get('/', passport.authenticate('jwt', { session: false }),
+authMiddleware(['admin', 'user']), getDocuments)
+
+router.get('/:id', passport.authenticate('jwt', { session: false }),
+authMiddleware(['admin', 'user']),getDocument)
+
+router.delete('/:id' , passport.authenticate('jwt', { session: false }),
+authMiddleware(['admin', 'user']),deleteDocument)
 
 export default router
