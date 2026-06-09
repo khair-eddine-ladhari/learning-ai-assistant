@@ -1,24 +1,20 @@
+export const Roles = {
+  admin: "admin",
+  user: "user",
+};
 
-
-
-// middleware/auth.middleware.js
-import jwt from 'jsonwebtoken'
-
-const authMiddleware = (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1]
-
-    if (!token) {
-      return res.status(401).json({ message: 'No token, access denied' })
+const RolesMiddleware = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    req.userId = decoded.id
-    next()
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden: insufficient role" });
+    }
 
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' })
-  }
-}
+    next();
+  };
+};
 
-export default authMiddleware
+export default RolesMiddleware;

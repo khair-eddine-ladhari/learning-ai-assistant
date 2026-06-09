@@ -37,7 +37,7 @@ export const uploadDocument = async (req, res) => {
 // GET /api/documents
 export const getDocuments = async (req, res) => {
   try {
-    const documents = await Document.find({ userId: req.userId })
+    const documents = await Document.find({ userId: req.user.id }) 
       .sort({ createdAt: -1 })
     res.json(documents)
   } catch (err) {
