@@ -77,13 +77,32 @@ const DocumentCard = ({ doc, onDelete, onClick }) => {
 }
 
 // ── Upload Modal ──────────────────────────────────────────────────
-const UploadModal = ({ onClose }) => {
+const UploadModal = ({ onClose, onUploaded }) => {
   const [file, setFile] = useState(null)
   const [dragging, setDragging] = useState(false)
 
   const handleFile = (f) => {
     if (f?.type === 'application/pdf') setFile(f)
   }
+
+
+
+const addDocument = async () => {
+  const data = new FormData();
+  data.append("pdf", file);
+  try {
+    const res = await axios.post(`${API_URL}/api/documents`, data, {
+      headers: {
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+      },
+    });
+   
+    onUploaded(res.data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   return (
     <div
@@ -136,6 +155,7 @@ const UploadModal = ({ onClose }) => {
             Cancel
           </button>
           <button
+            onClick={addDocument}
             disabled={!file}
             className={`flex-[2] py-2.5 rounded-lg text-sm font-semibold transition-all
               ${file
@@ -162,8 +182,7 @@ export default function HomePage() {
   const [showUpload, setShowUpload] = useState(false)
   const [search, setSearch] = useState('')
   const [fetching, setFetching] = useState(true)
-
-
+  
 useEffect(() => {
   const token = sessionStorage.getItem("token");
 
@@ -297,7 +316,15 @@ useEffect(() => {
         )}
       </main>
 
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}
+      {showUpload && (
+  <UploadModal
+    onClose={() => setShowUpload(false)}
+    onUploaded={(newDoc) => {
+      setDocuments((prev) => [...prev, newDoc]); // ← add to list instantly
+      setShowUpload(false); // ← close modal
+    }}
+  />
+)}
     </div>
   )
 }
