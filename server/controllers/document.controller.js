@@ -18,7 +18,7 @@ export const uploadDocument = async (req, res) => {
     const pineconeNamespace = `${req.userId}-${Date.now()}`
 
     const document = await Document.create({
-      userId: req.userId,
+      userId: req.user._id,
       filename: req.file.filename,
       originalName: req.file.originalname,
       pineconeNamespace

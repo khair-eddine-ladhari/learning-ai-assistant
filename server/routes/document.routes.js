@@ -17,8 +17,13 @@ const router = express.Router()
 
  // all document routes are protected
 
-router.post('/', upload.single('pdf'), passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']), uploadDocument)
+router.post(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  authMiddleware(["admin", "user"]),
+  upload.single("pdf"),
+  uploadDocument
+);
 
 router.get('/', passport.authenticate('jwt', { session: false }),
 authMiddleware(['admin', 'user']), getDocuments)
