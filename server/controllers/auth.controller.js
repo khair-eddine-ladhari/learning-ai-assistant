@@ -32,6 +32,7 @@ export const register = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+       role: user.role,
       token: generateToken(user._id)
     })
 
@@ -59,6 +60,7 @@ export const login = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
       token: generateToken(user._id)
     })
 
@@ -70,7 +72,7 @@ export const login = async (req, res) => {
 // GET /api/auth/me
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password')
+    const user = await User.findById(req.user._id).select('-password') // ✅ req.user not req.userId
     res.json(user)
   } catch (err) {
     res.status(500).json({ message: err.message })

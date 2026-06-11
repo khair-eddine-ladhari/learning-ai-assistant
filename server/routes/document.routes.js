@@ -10,7 +10,7 @@ import {
   getDocument,
   deleteDocument
 } from '../controllers/document.controller.js'
-import authMiddleware from '../middleware/auth.middleware.js'
+import rolesMiddleware from '../middleware/roles.middleware.js'
 import upload from '../middleware/upload.middleware.js'
 import passport from '../middleware/passport.js'
 const router = express.Router()
@@ -20,18 +20,18 @@ const router = express.Router()
 router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
-  authMiddleware(["admin", "user"]),
+  rolesMiddleware(["admin", "user"]),
   upload.single("pdf"),
   uploadDocument
 );
 
 router.get('/', passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']), getDocuments)
+rolesMiddleware(['admin', 'user']), getDocuments)
 
 router.get('/:id', passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']),getDocument)
+rolesMiddleware(['admin', 'user']),getDocument)
 
 router.delete('/:id' , passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']),deleteDocument)
+rolesMiddleware(['admin', 'user']),deleteDocument)
 
 export default router

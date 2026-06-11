@@ -9,17 +9,17 @@ import {
   sendMessage,
   getChatHistory
 } from '../controllers/chat.controller.js'
-import authMiddleware from '../middleware/auth.middleware.js'
+import rolesMiddleware from '../middleware/roles.middleware.js'
 import passport from '../middleware/passport.js'
 const router = express.Router()
 
 
 
 router.post('/:documentId', passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']),sendMessage)
+rolesMiddleware(['admin', 'user']),sendMessage)
 
 
 router.get('/:documentId', passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']), getChatHistory)
+rolesMiddleware(['admin', 'user']), getChatHistory)
 
 export default router

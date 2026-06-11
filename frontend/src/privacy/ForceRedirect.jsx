@@ -1,16 +1,9 @@
-import HomePage from "../pages/HomePage";
+﻿import { Navigate } from "react-router-dom";
 
+export default function ForceRedirect({ user, children }) {
+  if (user?.isconnected) {
+    return <Navigate to="/homepage" replace />;
+  }
 
-
-
-export default function PrivateRouter({user, children}) {
-  
-
-    if (user.isconnected ){
-      return <HomePage />;
-    } else {
-      return children;
-    }
-
-  
+  return children;
 }

@@ -10,17 +10,17 @@ import {
   getQuizzes,
   getQuiz
 } from '../controllers/quiz.controller.js'
-import authMiddleware from '../middleware/auth.middleware.js'
+import rolesMiddleware from '../middleware/roles.middleware.js'
 import passport from '../middleware/passport.js'
 const router = express.Router()
 
 
 
 router.post('/:documentId', passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']), generateQuiz)
+rolesMiddleware(['admin', 'user']), generateQuiz)
 router.get('/:documentId', passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']), getQuizzes)
+rolesMiddleware(['admin', 'user']), getQuizzes)
 router.get('/:documentId/:quizId', passport.authenticate('jwt', { session: false }),
-authMiddleware(['admin', 'user']), getQuiz)
+rolesMiddleware(['admin', 'user']), getQuiz)
 
 export default router

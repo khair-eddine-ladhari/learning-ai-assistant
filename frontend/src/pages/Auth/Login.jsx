@@ -1,77 +1,54 @@
-
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useContext } from "react";
+import { GlobalContext } from "../../context/AuthContext";
 
-function ParticleCanvas() {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let animId;
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    const particles = Array.from({ length: 55 }, () => ({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      r: Math.random() * 1.6 + 0.3,
-      dx: (Math.random() - 0.5) * 0.35,
-      dy: (Math.random() - 0.5) * 0.35,
-      opacity: Math.random() * 0.5 + 0.1,
-    }));
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(100,210,180,${p.opacity})`;
-        ctx.fill();
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-      });
-      animId = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-  return (
-    <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" style={{ opacity: 0.6 }} />
-  );
-}
+const API_URL = import.meta.env.VITE_API_URL;
 
 function InputField({ label, type, placeholder, value, onChange, icon }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState(false);
   const isPassword = type === "password";
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-slate-400 text-xs font-medium uppercase tracking-wide">{label}</label>
-      <div className="relative">
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <label style={{ fontSize: "12px", fontWeight: "500", color: "#999", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        {label}
+      </label>
+      <div style={{ position: "relative" }}>
         {icon && (
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm">{icon}</span>
+          <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: "#bbb" }}>
+            {icon}
+          </span>
         )}
         <input
           type={isPassword && showPassword ? "text" : type}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-teal-500/60 focus:bg-white/8 transition-all duration-200"
-          style={{ paddingLeft: icon ? "2.5rem" : undefined, paddingRight: isPassword ? "2.75rem" : undefined }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={{
+            width: "100%",
+            border: `1px solid ${focused ? "#111" : "#e5e5e5"}`,
+            borderRadius: "10px",
+            padding: "11px 14px",
+            paddingLeft: icon ? "36px" : "14px",
+            paddingRight: isPassword ? "52px" : "14px",
+            fontSize: "14px",
+            color: "#111",
+            background: "white",
+            outline: "none",
+            fontFamily: "inherit",
+            transition: "border-color 0.15s",
+          }}
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword((p) => !p)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors text-xs"
+            style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", fontSize: "12px", color: "#aaa", cursor: "pointer" }}
           >
             {showPassword ? "Hide" : "Show"}
           </button>
@@ -86,6 +63,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
+  const { login } = useContext(GlobalContext);
 
   const set = (field) => (e) => {
     setError("");
@@ -99,74 +77,76 @@ export default function LoginPage() {
     try {
       if (!form.email.trim()) return setError("Please enter your email.");
       if (!form.password.trim()) return setError("Please enter your password.");
-
-
-      const res = await axios.post("/api/auth/login", form);
-      const data = await res.data;
-      if (!res.ok) throw new Error(data.message || "Invalid email or password.");
-      sessionStorage.setItem("token", data.token);
+      const res = await axios.post(`${API_URL}/api/auth/login`, form);
+      sessionStorage.setItem("token", res.data.token);
+      login(res.data);
       navigate("/homepage");
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0d1117] text-white overflow-x-hidden flex flex-col items-center justify-center px-4">
-      {/* Ambient blobs */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #14b8a6 0%, transparent 70%)", filter: "blur(80px)" }} />
-        <div className="absolute top-1/3 -right-60 w-[500px] h-[500px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", filter: "blur(80px)" }} />
-        <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)", filter: "blur(80px)" }} />
-      </div>
+    <div style={{ background: "white", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", position: "relative", overflowX: "hidden" }}>
+      <style>{`
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+      `}</style>
 
-      <ParticleCanvas />
+      {/* Subtle grid bg */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", opacity: 0.025, backgroundImage: "linear-gradient(#111 1px,transparent 1px),linear-gradient(90deg,#111 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+      {/* Soft blobs */}
+      <div style={{ position: "fixed", top: "-120px", left: "-120px", width: "400px", height: "400px", borderRadius: "50%", background: "radial-gradient(circle,#f0f0f0 0%,transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "fixed", bottom: "-80px", right: "-80px", width: "300px", height: "300px", borderRadius: "50%", background: "radial-gradient(circle,#f5f5f5 0%,transparent 70%)", pointerEvents: "none" }} />
 
-      {/* Logo */}
-      <div className="relative z-10 flex items-center gap-2 mb-8 cursor-pointer" onClick={() => navigate("/")}>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <span className="text-white font-semibold text-base">Learning AI Assistant</span>
-      </div>
-
-      {/* Card */}
-      <div className="relative z-10 w-full max-w-md">
-        <div className="absolute inset-x-8 -top-4 h-20 blur-3xl opacity-20 rounded-full pointer-events-none"
-          style={{ background: "linear-gradient(90deg, #14b8a6, #6366f1)" }} />
-
-        <div className="relative rounded-2xl border border-white/10 bg-[#161b22] overflow-hidden shadow-2xl shadow-black/60 p-8">
-          {/* Badge + heading */}
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-teal-500/30 bg-teal-500/10 mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-              <span className="text-teal-300 text-xs font-medium tracking-wide uppercase">Welcome back</span>
-            </div>
-            <h1 className="text-2xl font-bold text-white">Sign in to your workspace</h1>
-            <p className="text-slate-400 text-sm mt-1">Your documents and chats are waiting.</p>
+      {/* Navbar */}
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, height: "52px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", padding: "0 2rem", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }} onClick={() => navigate("/")}>
+          <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: "#111", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M14 2v6h6M9 13h6M9 17h4" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
           </div>
+          <span style={{ fontSize: "14px", fontWeight: "600", color: "#111", letterSpacing: "-0.3px" }}>DocChat</span>
+        </div>
+      </nav>
 
-          {/* Error */}
+      {/* Card area */}
+      <div style={{ position: "relative", width: "100%", maxWidth: "420px", animation: "fadeUp 0.6s ease both", marginTop: "52px" }}>
+
+        {/* Badge */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 14px", borderRadius: "100px", border: "1px solid #e5e5e5", background: "#fafafa" }}>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "blink 2s infinite" }} />
+            <span style={{ fontSize: "12px", color: "#666", fontWeight: "500" }}>Welcome back</span>
+          </div>
+        </div>
+
+        {/* Card */}
+        <div style={{ background: "white", border: "1px solid #ebebeb", borderRadius: "20px", padding: "40px 36px", boxShadow: "0 4px 32px rgba(0,0,0,0.05)" }}>
+          <h1 style={{ fontSize: "26px", fontWeight: "700", color: "#0a0a0a", letterSpacing: "-0.8px", marginBottom: "6px" }}>
+            Sign in to your workspace
+          </h1>
+          <p style={{ fontSize: "14px", color: "#888", marginBottom: "28px", lineHeight: "1.5" }}>
+            Your documents and chats are waiting.
+          </p>
+
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm">
+            <div style={{ marginBottom: "20px", padding: "12px 16px", borderRadius: "10px", background: "#fff5f5", border: "1px solid #fecaca", color: "#dc2626", fontSize: "13px" }}>
               {error}
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <InputField label="Email" type="email" placeholder="you@example.com" value={form.email} onChange={set("email")} icon="✉️" />
             <InputField label="Password" type="password" placeholder="Your password" value={form.password} onChange={set("password")} icon="🔒" />
 
-            <div className="flex justify-end -mt-1">
-              <button type="button" className="text-xs text-slate-500 hover:text-teal-400 transition-colors">
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-4px" }}>
+              <button type="button" style={{ background: "none", border: "none", fontSize: "12px", color: "#aaa", cursor: "pointer" }}>
                 Forgot password?
               </button>
             </div>
@@ -174,43 +154,44 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group mt-1 w-full px-6 py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white transition-all duration-200 shadow-xl shadow-teal-500/25 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ width: "100%", padding: "13px", borderRadius: "10px", border: "none", background: loading ? "#555" : "#111", color: "white", fontSize: "14px", fontWeight: "600", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", transition: "all 0.15s" }}
+              onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = "#333"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+              onMouseLeave={e => { e.currentTarget.style.background = loading ? "#555" : "#111"; e.currentTarget.style.transform = "translateY(0)"; }}
             >
               {loading ? (
                 <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  <svg style={{ animation: "spin 1s linear infinite", width: "14px", height: "14px" }} fill="none" viewBox="0 0 24 24">
+                    <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
                   Signing in…
                 </>
               ) : (
                 <>
                   Sign in
-                  <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </>
               )}
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-white/8" />
-            <span className="text-slate-600 text-xs">or</span>
-            <div className="flex-1 h-px bg-white/8" />
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "24px 0" }}>
+            <div style={{ flex: 1, height: "1px", background: "#f0f0f0" }} />
+            <span style={{ fontSize: "12px", color: "#ccc" }}>or</span>
+            <div style={{ flex: 1, height: "1px", background: "#f0f0f0" }} />
           </div>
 
-          <p className="text-center text-slate-500 text-sm">
+          <p style={{ textAlign: "center", fontSize: "13px", color: "#888" }}>
             Don't have an account?{" "}
-            <button onClick={() => navigate("/register")} className="text-teal-400 hover:text-teal-300 font-medium transition-colors">
+            <button onClick={() => navigate("/register")} style={{ background: "none", border: "none", color: "#111", fontWeight: "600", cursor: "pointer", fontSize: "13px" }}>
               Create one
             </button>
           </p>
         </div>
 
-        <p className="text-center text-slate-600 text-xs mt-5">
+        <p style={{ textAlign: "center", fontSize: "12px", color: "#ccc", marginTop: "16px" }}>
           No credit card required · Your data stays private
         </p>
       </div>

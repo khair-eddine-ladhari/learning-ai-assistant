@@ -17,15 +17,22 @@ import Register from './pages/Auth/Register'
 
 import Noaccess from './pages/Noaccess'
 
+
+import { useContext } from "react";
+import { GlobalContext } from "./context/AuthContext";
+
 function App() {
   const [count, setCount] = useState(0)
 
+  const {user} = useContext(GlobalContext);
 
 
   const userInfo = {
-  isconnected: true,
-  role:"user"
+  isconnected: user ? true : false,
+  role: user ? user.role : null
 };
+
+
 
   return (
      <div>
@@ -36,18 +43,19 @@ function App() {
 
 
 
-      <Route path='/Register' element={ <ForceRedirect user={userInfo} > <Register /></ForceRedirect>} />
-      <Route path='/Login' element={ <ForceRedirect user={userInfo} > <Login /></ForceRedirect>} />
+      <Route path='/register' element={ <ForceRedirect user={userInfo} > <Register /></ForceRedirect>} />
+      <Route path='/login' element={ <ForceRedirect user={userInfo} > <Login /></ForceRedirect>} />
 
 
      
 
-      <Route path='/'element={<LandingPage />} />
-      <Route path='/Home' element={<LandingPage />} />
+      <Route path='/' element={<LandingPage />} />
+      <Route path='/home' element={<LandingPage />} />
 
-      <Route path='/HomePage' element={ <PrivateRouter user={userInfo} > <HomePage /></PrivateRouter>} />
+      <Route path='/home' element={<PrivateRouter user={userInfo}><HomePage /></PrivateRouter>} />
+      <Route path='/homepage' element={<PrivateRouter user={userInfo}><HomePage /></PrivateRouter>} />
 
-      <Route path='/ChatPage' element={ <PrivateRouter user={userInfo} > <ChatPage /></PrivateRouter>} />
+     <Route path='/chat/:id' element={<PrivateRouter user={userInfo}><ChatPage /></PrivateRouter>} />
     
 
       

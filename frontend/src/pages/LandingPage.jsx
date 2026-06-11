@@ -1,415 +1,527 @@
-
-import Navbar from "../components/Navbar";
-
-
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-// ─── Floating particle background ───────────────────────────────────────────
-function ParticleCanvas() {
-  const canvasRef = useRef(null);
+// ── useInView hook ─────────────────────────────────────────────────
+function useInView(threshold = 0.15) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let animId;
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    const particles = Array.from({ length: 55 }, () => ({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      r: Math.random() * 1.6 + 0.3,
-      dx: (Math.random() - 0.5) * 0.35,
-      dy: (Math.random() - 0.5) * 0.35,
-      opacity: Math.random() * 0.5 + 0.1,
-    }));
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(100,210,180,${p.opacity})`;
-        ctx.fill();
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-      });
-      animId = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.6 }}
-    />
-  );
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, visible];
 }
 
-// ─── Feature card ────────────────────────────────────────────────────────────
-function FeatureCard({ icon, title, desc, delay }) {
+// ── Animated section wrapper ───────────────────────────────────────
+function Reveal({ children, delay = 0, className = "" }) {
+  const [ref, visible] = useInView();
   return (
     <div
-      className="group relative rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:border-teal-500/40 hover:bg-white/8 transition-all duration-300 cursor-default"
-      style={{ animationDelay: `${delay}ms` }}
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(28px)",
+        transition: `opacity 0.65s ease ${delay}ms, transform 0.65s ease ${delay}ms`,
+      }}
     >
-      {/* glow on hover */}
-      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at top left, rgba(20,184,166,0.08) 0%, transparent 70%)" }} />
-      <div className="relative z-10">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-500/20 to-emerald-500/20 border border-teal-500/30 flex items-center justify-center mb-4 text-xl group-hover:scale-110 transition-transform duration-200">
-          {icon}
-        </div>
-        <h3 className="text-white font-semibold text-base mb-2">{title}</h3>
-        <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
-      </div>
+      {children}
     </div>
   );
 }
 
-// ─── How-it-works step ───────────────────────────────────────────────────────
-function Step({ num, title, desc }) {
+// ── Navbar ─────────────────────────────────────────────────────────
+function Navbar({ navigate }) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
   return (
-    <div className="flex gap-4 items-start">
-      <div className="flex-shrink-0 w-9 h-9 rounded-full border border-teal-500/50 bg-teal-500/10 flex items-center justify-center">
-        <span className="text-teal-400 text-sm font-bold">{num}</span>
+    <nav
+      style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
+        height: "52px",
+        background: scrolled ? "rgba(255,255,255,0.92)" : "transparent",
+        backdropFilter: scrolled ? "blur(12px)" : "none",
+        borderBottom: scrolled ? "1px solid #f0f0f0" : "1px solid transparent",
+        transition: "all 0.3s ease",
+        display: "flex", alignItems: "center",
+        padding: "0 2rem",
+        justifyContent: "space-between",
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}
+    >
+      {/* Logo */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}
+        onClick={() => navigate("/")}>
+        <div style={{
+          width: "28px", height: "28px", borderRadius: "8px",
+          background: "#111", display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M14 2v6h6M9 13h6M9 17h4" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </div>
+        <span style={{ fontSize: "14px", fontWeight: "600", color: "#111", letterSpacing: "-0.3px" }}>DocChat</span>
       </div>
-      <div>
-        <h4 className="text-white font-semibold text-sm mb-1">{title}</h4>
-        <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+
+      {/* Nav links */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <button onClick={() => navigate("/login")}
+          style={{ padding: "7px 16px", borderRadius: "8px", border: "1px solid #e5e5e5", background: "transparent", fontSize: "13px", fontWeight: "500", color: "#555", cursor: "pointer", transition: "all 0.15s" }}
+          onMouseEnter={e => { e.target.style.background = "#f5f5f5"; e.target.style.color = "#111"; }}
+          onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.color = "#555"; }}
+        >
+          Sign in
+        </button>
+        <button onClick={() => navigate("/register")}
+          style={{ padding: "7px 16px", borderRadius: "8px", border: "none", background: "#111", fontSize: "13px", fontWeight: "500", color: "white", cursor: "pointer", transition: "all 0.15s" }}
+          onMouseEnter={e => { e.target.style.background = "#333"; }}
+          onMouseLeave={e => { e.target.style.background = "#111"; }}
+        >
+          Get started
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+// ── Feature card ───────────────────────────────────────────────────
+function FeatureCard({ icon, title, desc, delay }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Reveal delay={delay}>
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          background: hovered ? "#fafafa" : "white",
+          border: `1px solid ${hovered ? "#d4d4d4" : "#ebebeb"}`,
+          borderRadius: "16px", padding: "24px",
+          cursor: "default",
+          transition: "all 0.2s ease",
+          transform: hovered ? "translateY(-3px)" : "translateY(0)",
+        }}
+      >
+        <div style={{
+          width: "40px", height: "40px", borderRadius: "10px",
+          background: hovered ? "#111" : "#f5f5f5",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: "16px",
+          transition: "all 0.2s ease",
+          fontSize: "18px",
+        }}>
+          {typeof icon === "string"
+            ? <span style={{ filter: hovered ? "brightness(10)" : "none", transition: "filter 0.2s" }}>{icon}</span>
+            : icon}
+        </div>
+        <p style={{ fontSize: "14px", fontWeight: "600", color: "#111", marginBottom: "6px" }}>{title}</p>
+        <p style={{ fontSize: "13px", color: "#888", lineHeight: "1.6" }}>{desc}</p>
+      </div>
+    </Reveal>
+  );
+}
+
+// ── Step ───────────────────────────────────────────────────────────
+function Step({ num, title, desc, delay, active }) {
+  return (
+    <Reveal delay={delay}>
+      <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+        <div style={{
+          width: "32px", height: "32px", borderRadius: "50%",
+          background: active ? "#111" : "#f5f5f5",
+          border: `1px solid ${active ? "#111" : "#e5e5e5"}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0, transition: "all 0.3s",
+        }}>
+          <span style={{ fontSize: "12px", fontWeight: "700", color: active ? "white" : "#999" }}>{num}</span>
+        </div>
+        <div>
+          <p style={{ fontSize: "14px", fontWeight: "600", color: "#111", marginBottom: "4px" }}>{title}</p>
+          <p style={{ fontSize: "13px", color: "#888", lineHeight: "1.6" }}>{desc}</p>
+        </div>
+      </div>
+    </Reveal>
+  );
+}
+
+// ── Animated counter ───────────────────────────────────────────────
+function Counter({ target, suffix = "" }) {
+  const [count, setCount] = useState(0);
+  const [ref, visible] = useInView();
+  useEffect(() => {
+    if (!visible) return;
+    let start = 0;
+    const step = target / 40;
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) { setCount(target); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, 30);
+    return () => clearInterval(timer);
+  }, [visible, target]);
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
+
+// ── Mock chat UI ───────────────────────────────────────────────────
+function MockChat() {
+  const messages = [
+    { role: "ai", text: "I've read your document. It covers gradient descent, backpropagation, and the bias-variance tradeoff. What would you like to explore?" },
+    { role: "user", text: "Explain the bias-variance tradeoff simply" },
+    { role: "ai", text: "From slide 14: bias = error from oversimplified models, variance = sensitivity to training data. High bias underfits, high variance overfits..." },
+  ];
+  return (
+    <div style={{
+      background: "white", borderRadius: "16px", border: "1px solid #ebebeb",
+      overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+    }}>
+      {/* Chrome bar */}
+      <div style={{ background: "#fafafa", borderBottom: "1px solid #ebebeb", padding: "10px 16px", display: "flex", alignItems: "center", gap: "6px" }}>
+        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ff5f57" }} />
+        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#febc2e" }} />
+        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#28c840" }} />
+        <div style={{ flex: 1, marginLeft: "8px", background: "#ebebeb", borderRadius: "6px", padding: "3px 12px", fontSize: "11px", color: "#aaa", textAlign: "center" }}>
+          docchat.app/chat
+        </div>
+      </div>
+
+      {/* Layout */}
+      <div style={{ display: "flex", height: "280px" }}>
+        {/* Sidebar */}
+        <div style={{ width: "180px", borderRight: "1px solid #ebebeb", padding: "16px 12px", flexShrink: 0, background: "#fafafa" }}>
+          <p style={{ fontSize: "10px", fontWeight: "600", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Documents</p>
+          {["Lecture 01 — ML Intro", "Research Paper", "Chapter 4 Notes"].map((d, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "6px 8px", borderRadius: "8px", marginBottom: "2px",
+              background: i === 0 ? "#111" : "transparent",
+              cursor: "pointer",
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={i === 0 ? "white" : "#bbb"} strokeWidth="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" /><path d="M14 2v6h6" />
+              </svg>
+              <span style={{ fontSize: "11px", color: i === 0 ? "white" : "#999", truncate: true, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Chat */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px", gap: "12px", overflow: "hidden" }}>
+          {messages.map((m, i) => (
+            <div key={i} style={{ display: "flex", gap: "8px", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+              {m.role === "ai" && (
+                <div style={{ width: "22px", height: "22px", borderRadius: "50%", background: "#111", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: "8px", color: "white", fontWeight: "700" }}>AI</span>
+                </div>
+              )}
+              <div style={{
+                maxWidth: "75%", padding: "8px 12px", borderRadius: "12px",
+                background: m.role === "user" ? "#111" : "white",
+                border: m.role === "user" ? "none" : "1px solid #ebebeb",
+                fontSize: "11px", color: m.role === "user" ? "white" : "#333",
+                lineHeight: "1.5",
+              }}>
+                {m.text}
+                {i === 2 && <span style={{ display: "inline-block", width: "2px", height: "11px", background: "#111", marginLeft: "3px", animation: "blink 1s infinite", verticalAlign: "middle" }} />}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Input */}
+      <div style={{ borderTop: "1px solid #ebebeb", padding: "12px 16px", display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ flex: 1, background: "#f5f5f5", borderRadius: "10px", padding: "8px 12px", fontSize: "11px", color: "#bbb" }}>
+          Ask anything about this document…
+        </div>
+        <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: "#111", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" fill="white" /></svg>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Main Landing Page ───────────────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    const t = setInterval(() => setActiveStep(s => (s + 1) % 3), 2000);
+    return () => clearInterval(t);
   }, []);
 
   const features = [
-    {
-      icon: "📄",
-      title: "Upload Any Document",
-      desc: "PDFs, lecture notes, research papers — your assistant reads everything so you don't have to re-read it.",
-    },
-    {
-      icon: "🧠",
-      title: "Instant AI Understanding",
-      desc: "Ask anything about your materials. Get precise answers grounded in your own sources, not generic web results.",
-    },
-    {
-      icon: "💬",
-      title: "Contextual Chat",
-      desc: "A persistent conversation that remembers your documents, your questions, and your learning history.",
-    },
-    {
-      icon: "🔍",
-      title: "Source-Grounded Answers",
-      desc: "Every response is backed by your uploaded content. No hallucinations, no guessing — just your material.",
-    },
-    {
-      icon: "⚡",
-      title: "Lightning Fast RAG",
-      desc: "Powered by a vector search pipeline that retrieves the most relevant chunks from your documents in milliseconds.",
-    },
-    {
-      icon: "🔒",
-      title: "Your Data, Private",
-      desc: "Documents stay in your workspace. Nothing is shared or used to train external models.",
-    },
+    { icon: "📄", title: "Upload any PDF", desc: "Drag and drop your lecture notes, papers, or any PDF. Processed and indexed in seconds.", delay: 0 },
+    { icon: "🧠", title: "RAG-powered answers", desc: "Every answer is grounded in your document. No hallucinations — just your content, understood.", delay: 80 },
+    { icon: "💬", title: "Natural conversation", desc: "Ask follow-up questions, dig deeper, or ask for simpler explanations. It remembers context.", delay: 160 },
+    { icon: "📋", title: "Auto-summaries", desc: "One click to get a concise overview of any document. Save time, get the big picture fast.", delay: 240 },
+    { icon: "🎯", title: "Smart quizzes", desc: "Test your understanding with AI-generated questions based on exactly what you uploaded.", delay: 320 },
+    { icon: "🔒", title: "Private by default", desc: "Your documents stay in your workspace. Nothing is shared or used to train external models.", delay: 400 },
   ];
 
   const steps = [
-    { num: "01", title: "Upload your documents", desc: "Drop in PDFs, notes, or any text-based files you want to study." },
-    { num: "02", title: "Your assistant processes them", desc: "The RAG pipeline chunks, embeds, and indexes everything instantly." },
-    { num: "03", title: "Start asking questions", desc: "Chat naturally. Get answers pulled directly from your material." },
+    { num: "1", title: "Upload your documents", desc: "Drop in PDFs — lecture notes, papers, textbooks." },
+    { num: "2", title: "AI indexes everything", desc: "The RAG pipeline chunks, embeds, and indexes in seconds." },
+    { num: "3", title: "Start asking questions", desc: "Chat naturally. Get answers from your own material." },
+  ];
+
+  const stats = [
+    { value: 10000, suffix: "+", label: "Documents processed" },
+    { value: 98, suffix: "%", label: "Answer accuracy" },
+    { value: 2, suffix: "s", label: "Average response time" },
+    { value: 500, suffix: "+", label: "Active students" },
   ];
 
   return (
-    <div className="relative min-h-screen bg-[#0d1117] text-white overflow-x-hidden">
-      {/* Ambient background blobs */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div
-          className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #14b8a6 0%, transparent 70%)", filter: "blur(80px)" }}
-        />
-        <div
-          className="absolute top-1/3 -right-60 w-[500px] h-[500px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", filter: "blur(80px)" }}
-        />
-        <div
-          className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)", filter: "blur(80px)" }}
-        />
-      </div>
+    <div style={{ background: "white", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", color: "#111", overflowX: "hidden" }}>
+      <style>{`
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+      `}</style>
 
-      <ParticleCanvas />
-
-      {/* ── NAVBAR ── */}
-      <Navbar />
-      
+      <Navbar navigate={navigate} />
 
       {/* ── HERO ── */}
-      <section className="relative z-10 pt-36 pb-24 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-teal-500/30 bg-teal-500/10 mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-            <span className="text-teal-300 text-xs font-medium tracking-wide uppercase">
-              AI-Powered Learning
-            </span>
-          </div>
-
-          {/* Headline */}
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 tracking-tight">
-            Your documents.{" "}
-            <span
-              className="bg-clip-text text-transparent"
-              style={{
-                backgroundImage: "linear-gradient(135deg, #2dd4bf 0%, #34d399 50%, #6ee7b7 100%)",
-              }}
-            >
-              Fully understood.
-            </span>
-          </h1>
-
-          {/* Subheading */}
-          <p className="text-slate-400 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto mb-10">
-            Upload your PDFs and lecture notes, then ask anything. Get answers
-            grounded in your own material — not the entire internet.
-          </p>
-
-          {/* CTA group */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => navigate("/auth")}
-              className="group px-7 py-3.5 rounded-xl font-semibold text-base bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white transition-all duration-200 shadow-xl shadow-teal-500/30 flex items-center gap-2"
-            >
-              Start for free
-              <svg
-                className="w-4 h-4 group-hover:translate-x-0.5 transition-transform"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </button>
-            <button
-              onClick={() => navigate("/home")}
-              className="px-7 py-3.5 rounded-xl font-semibold text-base border border-white/15 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-all duration-200 backdrop-blur-sm"
-            >
-              See a demo
-            </button>
-          </div>
-
-          {/* Social proof */}
-          <p className="mt-6 text-slate-500 text-sm">
-            No credit card required &nbsp;·&nbsp; Built for students &amp; researchers
-          </p>
+      <section style={{ paddingTop: "140px", paddingBottom: "100px", paddingLeft: "24px", paddingRight: "24px", textAlign: "center", maxWidth: "960px", margin: "0 auto" }}>
+        {/* Badge */}
+        <div style={{ animation: "fadeUp 0.6s ease both", display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 14px", borderRadius: "100px", border: "1px solid #e5e5e5", background: "#fafafa", marginBottom: "28px" }}>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "blink 2s infinite" }} />
+          <span style={{ fontSize: "12px", color: "#666", fontWeight: "500" }}>RAG-powered document chat</span>
         </div>
 
-        {/* ── App preview mockup ── */}
-        <div className="relative max-w-4xl mx-auto mt-20">
-          {/* Glow behind */}
-          <div
-            className="absolute inset-x-20 top-8 h-40 blur-3xl opacity-30 rounded-full pointer-events-none"
-            style={{ background: "linear-gradient(90deg, #14b8a6, #6366f1)" }}
-          />
-          {/* Browser chrome */}
-          <div className="relative rounded-2xl border border-white/10 bg-[#161b22] overflow-hidden shadow-2xl shadow-black/60">
-            {/* Top bar */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 bg-[#0d1117]">
-              <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-              <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-              <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-              <div className="flex-1 mx-4 px-4 py-1 rounded-md bg-[#21262d] text-slate-500 text-xs text-center">
-                learning-ai-assistant.app
-              </div>
-            </div>
+        {/* Headline */}
+        <h1 style={{ animation: "fadeUp 0.6s 0.1s ease both", fontSize: "clamp(40px, 7vw, 72px)", fontWeight: "700", lineHeight: "1.08", letterSpacing: "-2px", color: "#0a0a0a", marginBottom: "20px" }}>
+          Chat with your<br />
+          <span style={{ color: "#0a0a0a", position: "relative", display: "inline-block" }}>
+            documents.
+            <svg style={{ position: "absolute", bottom: "-6px", left: 0, width: "100%", height: "8px" }} viewBox="0 0 200 8" preserveAspectRatio="none">
+              <path d="M0 6 Q50 1 100 5 Q150 9 200 4" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+          </span>
+        </h1>
 
-            {/* App layout */}
-            <div className="flex h-64 md:h-80">
-              {/* Sidebar */}
-              <div className="w-52 flex-shrink-0 border-r border-white/8 bg-[#0d1117] p-4 hidden sm:flex flex-col gap-3">
-                <p className="text-slate-500 text-xs uppercase tracking-widest mb-1">Your Documents</p>
-                {["Lecture 01 — Intro to ML", "Research Paper — NLP", "Chapter 4 Notes"].map((d, i) => (
-                  <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${i === 0 ? "bg-teal-500/15 border border-teal-500/30" : "hover:bg-white/5"} transition-colors`}>
-                    <span className="text-xs">📄</span>
-                    <span className={`text-xs truncate ${i === 0 ? "text-teal-300" : "text-slate-400"}`}>{d}</span>
-                  </div>
-                ))}
-                <button className="mt-auto flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-white/15 hover:border-teal-500/40 transition-colors">
-                  <span className="text-slate-500 text-xs">+ Upload PDF</span>
-                </button>
-              </div>
+        {/* Sub */}
+        <p style={{ animation: "fadeUp 0.6s 0.2s ease both", fontSize: "18px", color: "#666", lineHeight: "1.65", maxWidth: "520px", margin: "0 auto 36px" }}>
+          Upload a PDF, ask anything. Get answers grounded in your own material — not the entire internet.
+        </p>
 
-              {/* Chat area */}
-              <div className="flex-1 flex flex-col p-5 gap-3 overflow-hidden">
-                {/* AI message */}
-                <div className="flex gap-3 items-start">
-                  <div className="w-6 h-6 flex-shrink-0 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
-                    <span className="text-white text-[9px] font-bold">AI</span>
-                  </div>
-                  <div className="bg-white/5 border border-white/8 rounded-xl rounded-tl-none px-4 py-2.5 text-slate-300 text-xs leading-relaxed max-w-md">
-                    I've processed your lecture notes. The document covers supervised learning, gradient descent, and the bias-variance tradeoff. What would you like to explore?
-                  </div>
-                </div>
-                {/* User message */}
-                <div className="flex gap-3 items-start justify-end">
-                  <div className="bg-teal-500/15 border border-teal-500/25 rounded-xl rounded-tr-none px-4 py-2.5 text-teal-100 text-xs leading-relaxed max-w-sm">
-                    Explain the bias-variance tradeoff in simple terms
-                  </div>
-                  <div className="w-6 h-6 flex-shrink-0 rounded-full bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-300">K</div>
-                </div>
-                {/* AI typing */}
-                <div className="flex gap-3 items-start">
-                  <div className="w-6 h-6 flex-shrink-0 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
-                    <span className="text-white text-[9px] font-bold">AI</span>
-                  </div>
-                  <div className="bg-white/5 border border-white/8 rounded-xl rounded-tl-none px-4 py-2.5 text-slate-300 text-xs leading-relaxed max-w-md">
-                    According to your lecture notes (slide 14): bias is the error from overly simple models, variance is sensitivity to training data fluctuations. The tradeoff means...
-                    <span className="inline-block w-1 h-3 bg-teal-400 ml-1 animate-pulse rounded-sm" />
-                  </div>
-                </div>
+        {/* CTAs */}
+        <div style={{ animation: "fadeUp 0.6s 0.3s ease both", display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={() => navigate("/register")}
+            style={{ padding: "13px 28px", borderRadius: "12px", border: "none", background: "#111", color: "white", fontSize: "14px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s", display: "flex", alignItems: "center", gap: "6px" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#333"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#111"; e.currentTarget.style.transform = "translateY(0)"; }}
+          >
+            Start for free
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+          </button>
+          <button
+            onClick={() => navigate("/login")}
+            style={{ padding: "13px 28px", borderRadius: "12px", border: "1px solid #e5e5e5", background: "white", color: "#555", fontSize: "14px", fontWeight: "500", cursor: "pointer", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; e.currentTarget.style.borderColor = "#ccc"; e.currentTarget.style.color = "#111"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#e5e5e5"; e.currentTarget.style.color = "#555"; }}
+          >
+            Sign in
+          </button>
+        </div>
+
+        <p style={{ animation: "fadeUp 0.6s 0.4s ease both", fontSize: "12px", color: "#bbb", marginTop: "16px" }}>
+          No credit card required · Free to start
+        </p>
+
+        {/* Mock UI */}
+        <div style={{ marginTop: "64px", animation: "fadeUp 0.8s 0.5s ease both" }}>
+          <MockChat />
+        </div>
+      </section>
+
+      {/* ── STATS ── */}
+      <section style={{ borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", background: "#fafafa", padding: "48px 24px" }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "32px", textAlign: "center" }}>
+          {stats.map((s, i) => (
+            <Reveal key={i} delay={i * 80}>
+              <div>
+                <p style={{ fontSize: "32px", fontWeight: "700", color: "#111", letterSpacing: "-1px" }}>
+                  <Counter target={s.value} suffix={s.suffix} />
+                </p>
+                <p style={{ fontSize: "12px", color: "#999", marginTop: "4px" }}>{s.label}</p>
               </div>
-            </div>
-          </div>
+            </Reveal>
+          ))}
         </div>
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className="relative z-10 py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-teal-400 text-sm font-medium uppercase tracking-widest mb-3">Features</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+      <section style={{ padding: "96px 24px", maxWidth: "1040px", margin: "0 auto" }}>
+        <Reveal>
+          <div style={{ textAlign: "center", marginBottom: "56px" }}>
+            <p style={{ fontSize: "11px", fontWeight: "600", color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>Features</p>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: "700", letterSpacing: "-1px", color: "#111", marginBottom: "12px" }}>
               Everything you need to learn faster
             </h2>
-            <p className="text-slate-400 text-base max-w-xl mx-auto">
-              A focused set of tools built around one idea: your documents, deeply understood.
+            <p style={{ fontSize: "15px", color: "#888", maxWidth: "440px", margin: "0 auto", lineHeight: "1.6" }}>
+              A focused toolkit built around one idea: your documents, deeply understood.
             </p>
           </div>
+        </Reveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((f, i) => (
-              <FeatureCard key={i} {...f} delay={i * 80} />
-            ))}
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+          {features.map((f, i) => <FeatureCard key={i} {...f} />)}
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="relative z-10 py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="rounded-3xl border border-white/10 bg-white/3 backdrop-blur-sm overflow-hidden">
-            <div className="grid md:grid-cols-2 gap-0">
-              {/* Left — steps */}
-              <div className="p-10 border-b md:border-b-0 md:border-r border-white/10">
-                <p className="text-teal-400 text-sm font-medium uppercase tracking-widest mb-3">How it works</p>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">
-                  Three steps to understand anything
-                </h2>
-                <div className="flex flex-col gap-7">
-                  {steps.map((s, i) => (
-                    <Step key={i} {...s} />
-                  ))}
-                </div>
-              </div>
+      <section style={{ background: "#fafafa", borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", padding: "96px 24px" }}>
+        <div style={{ maxWidth: "960px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>
 
-              {/* Right — visual stack */}
-              <div className="p-10 flex flex-col justify-center gap-4">
-                {[
-                  { emoji: "📖", label: "Introduction to Neural Networks.pdf", size: "2.4 MB", status: "indexed", color: "teal" },
-                  { emoji: "🧪", label: "Transformer Architecture Paper.pdf", size: "1.8 MB", status: "indexed", color: "teal" },
-                  { emoji: "📝", label: "Week 5 Lecture Notes.pdf", size: "840 KB", status: "processing", color: "amber" },
-                ].map((doc, i) => (
-                  <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors">
-                    <span className="text-base">{doc.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-xs font-medium truncate">{doc.label}</p>
-                      <p className="text-slate-500 text-xs">{doc.size}</p>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      doc.color === "teal"
-                        ? "bg-teal-500/15 text-teal-300 border border-teal-500/30"
-                        : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                    }`}>
-                      {doc.status}
-                    </span>
+          {/* Left */}
+          <div>
+            <Reveal>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>How it works</p>
+              <h2 style={{ fontSize: "clamp(24px, 3vw, 36px)", fontWeight: "700", letterSpacing: "-0.8px", color: "#111", marginBottom: "40px", lineHeight: "1.2" }}>
+                Three steps to understand anything
+              </h2>
+            </Reveal>
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+              {steps.map((s, i) => <Step key={i} {...s} delay={i * 120} active={activeStep === i} />)}
+            </div>
+          </div>
+
+          {/* Right — document stack */}
+          <Reveal delay={200}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {[
+                { name: "Introduction to Neural Networks.pdf", size: "2.4 MB", status: "indexed", color: "#111" },
+                { name: "Transformer Architecture Paper.pdf", size: "1.8 MB", status: "indexed", color: "#111" },
+                { name: "Week 5 Lecture Notes.pdf", size: "840 KB", status: "processing", color: "#f59e0b" },
+              ].map((doc, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  padding: "14px 16px", borderRadius: "12px",
+                  background: "white", border: "1px solid #ebebeb",
+                  transition: "all 0.2s",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#d4d4d4"; e.currentTarget.style.transform = "translateX(4px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#ebebeb"; e.currentTarget.style.transform = "translateX(0)"; }}
+                >
+                  <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" /><path d="M14 2v6h6M9 13h6M9 17h4" />
+                    </svg>
                   </div>
-                ))}
-                <div className="mt-2 px-4 py-3 rounded-xl bg-teal-500/8 border border-teal-500/20">
-                  <p className="text-teal-300 text-xs font-medium mb-1">AI ready to answer</p>
-                  <p className="text-slate-500 text-xs">3 documents · 312 chunks indexed</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: "13px", fontWeight: "500", color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</p>
+                    <p style={{ fontSize: "11px", color: "#bbb", marginTop: "2px" }}>{doc.size}</p>
+                  </div>
+                  <span style={{
+                    fontSize: "11px", fontWeight: "500", padding: "3px 10px", borderRadius: "100px",
+                    background: doc.status === "indexed" ? "#f0fdf4" : "#fffbeb",
+                    color: doc.status === "indexed" ? "#16a34a" : "#d97706",
+                    border: `1px solid ${doc.status === "indexed" ? "#bbf7d0" : "#fde68a"}`,
+                    flexShrink: 0,
+                  }}>
+                    {doc.status}
+                  </span>
+                </div>
+              ))}
+
+              <div style={{ padding: "14px 16px", borderRadius: "12px", background: "#111", display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
+                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e", flexShrink: 0, animation: "blink 2s infinite" }} />
+                <div>
+                  <p style={{ fontSize: "13px", fontWeight: "500", color: "white" }}>AI ready to answer</p>
+                  <p style={{ fontSize: "11px", color: "#888", marginTop: "1px" }}>3 documents · 312 chunks indexed</p>
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ── CTA SECTION ── */}
-      <section className="relative z-10 py-24 px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <div
-            className="relative rounded-3xl border border-teal-500/25 overflow-hidden p-12"
-            style={{ background: "linear-gradient(135deg, rgba(20,184,166,0.08) 0%, rgba(99,102,241,0.08) 100%)" }}
-          >
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: "radial-gradient(ellipse at center, rgba(20,184,166,0.12) 0%, transparent 70%)" }}
-            />
-            <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+      {/* ── TOOLS SECTION ── */}
+      <section style={{ padding: "96px 24px", maxWidth: "960px", margin: "0 auto" }}>
+        <Reveal>
+          <div style={{ textAlign: "center", marginBottom: "56px" }}>
+            <p style={{ fontSize: "11px", fontWeight: "600", color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>Built-in tools</p>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: "700", letterSpacing: "-1px", color: "#111" }}>
+              More than just chat
+            </h2>
+          </div>
+        </Reveal>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1px", background: "#ebebeb", borderRadius: "16px", overflow: "hidden" }}>
+          {[
+            { label: "Chat", desc: "Ask anything, get grounded answers", icon: "💬" },
+            { label: "Summary", desc: "One-click document overview", icon: "📋" },
+            { label: "Quiz", desc: "Test yourself on your material", icon: "🎯" },
+          ].map((t, i) => (
+            <Reveal key={i} delay={i * 100}>
+              <div style={{ background: "white", padding: "32px 28px", textAlign: "center", cursor: "default", transition: "background 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#fafafa"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "white"; }}
+              >
+                <div style={{ fontSize: "28px", marginBottom: "12px" }}>{t.icon}</div>
+                <p style={{ fontSize: "15px", fontWeight: "600", color: "#111", marginBottom: "6px" }}>{t.label}</p>
+                <p style={{ fontSize: "13px", color: "#888" }}>{t.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section style={{ padding: "0 24px 96px", maxWidth: "720px", margin: "0 auto" }}>
+        <Reveal>
+          <div style={{
+            background: "#0a0a0a", borderRadius: "24px", padding: "64px 48px", textAlign: "center",
+            position: "relative", overflow: "hidden",
+          }}>
+            {/* subtle grid pattern */}
+            <div style={{ position: "absolute", inset: 0, opacity: 0.04, backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: "700", color: "white", letterSpacing: "-1px", marginBottom: "14px", lineHeight: "1.15" }}>
                 Ready to learn smarter?
               </h2>
-              <p className="text-slate-400 mb-8 text-base leading-relaxed">
+              <p style={{ fontSize: "15px", color: "#888", marginBottom: "32px", lineHeight: "1.6" }}>
                 Upload your first document and ask your first question in under a minute.
               </p>
               <button
-                onClick={() => navigate("/auth")}
-                className="px-8 py-4 rounded-xl font-semibold text-base bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white transition-all duration-200 shadow-xl shadow-teal-500/30"
+                onClick={() => navigate("/register")}
+                style={{ padding: "13px 32px", borderRadius: "12px", border: "none", background: "white", color: "#111", fontSize: "14px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f0f0f0"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
-                Get started for free
+                Get started for free →
               </button>
+              <p style={{ fontSize: "12px", color: "#555", marginTop: "14px" }}>No credit card required</p>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="relative z-10 border-t border-white/8 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="text-slate-400 text-sm">Learning AI Assistant</span>
+      <footer style={{ borderTop: "1px solid #f0f0f0", padding: "28px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "960px", margin: "0 auto", flexWrap: "wrap", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ width: "22px", height: "22px", borderRadius: "6px", background: "#111", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
-          <p className="text-slate-600 text-xs">
-            Built with React · Vite · Tailwind · Node.js · MongoDB
-          </p>
+          <span style={{ fontSize: "13px", color: "#888" }}>DocChat</span>
         </div>
+        <p style={{ fontSize: "12px", color: "#ccc" }}>Built with React · Vite · Tailwind · Node.js · MongoDB</p>
       </footer>
     </div>
   );
