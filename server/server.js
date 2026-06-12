@@ -13,7 +13,7 @@ import authRoutes from './routes/auth.routes.js'
 import documentRoutes from './routes/document.routes.js'
 import chatRoutes from './routes/chat.routes.js'
 import quizRoutes from './routes/quiz.routes.js'
-
+import notesRoutes from './routes/notes.routes.js'
 
 import fs from 'fs'
 if (!fs.existsSync('uploads')) fs.mkdirSync('uploads')
@@ -41,6 +41,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/documents', documentRoutes)
 app.use('/api/chat', chatRoutes)
 app.use('/api/quiz', quizRoutes)
+app.use('/api/notes', notesRoutes)
 
 
 

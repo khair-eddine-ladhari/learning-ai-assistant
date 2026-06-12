@@ -50,7 +50,7 @@ export const getDocument = async (req, res) => {
   try {
     const document = await Document.findOne({
       _id: req.params.id,
-      userId: req.userId
+      userId:req.user._id 
     })
 
     if (!document) {
@@ -69,7 +69,7 @@ export const deleteDocument = async (req, res) => {
   try {
     const document = await Document.findOne({
       _id: req.params.id,
-      userId: req.userId
+      userId:req.user._id 
     })
 
     if (!document) {

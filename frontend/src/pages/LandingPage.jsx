@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useContext } from "react"
+import { GlobalContext } from "../context/AuthContext";
+
 
 // ── useInView hook ─────────────────────────────────────────────────
 function useInView(threshold = 0.15) {
@@ -36,6 +39,10 @@ function Reveal({ children, delay = 0, className = "" }) {
 
 // ── Navbar ─────────────────────────────────────────────────────────
 function Navbar({ navigate }) {
+
+
+  const { user } = useContext(GlobalContext);
+
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
@@ -75,13 +82,16 @@ function Navbar({ navigate }) {
 
       {/* Nav links */}
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <button onClick={() => navigate("/login")}
+
+        {!user ? <button onClick={() => navigate("/login")}
           style={{ padding: "7px 16px", borderRadius: "8px", border: "1px solid #e5e5e5", background: "transparent", fontSize: "13px", fontWeight: "500", color: "#555", cursor: "pointer", transition: "all 0.15s" }}
           onMouseEnter={e => { e.target.style.background = "#f5f5f5"; e.target.style.color = "#111"; }}
           onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.color = "#555"; }}
         >
           Sign in
-        </button>
+        </button>:""}
+
+       
         <button onClick={() => navigate("/register")}
           style={{ padding: "7px 16px", borderRadius: "8px", border: "none", background: "#111", fontSize: "13px", fontWeight: "500", color: "white", cursor: "pointer", transition: "all 0.15s" }}
           onMouseEnter={e => { e.target.style.background = "#333"; }}

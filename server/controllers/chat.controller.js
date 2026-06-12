@@ -1,10 +1,9 @@
-
-
-// controllers/chat.controller.js
 import Chat from '../models/Chat.js'
 import Document from '../models/Document.js'
+import axios from 'axios'
 
 const MAX_HISTORY = 10
+const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000'
 
 // POST /api/chat/:documentId
 export const sendMessage = async (req, res) => {
@@ -15,24 +14,32 @@ export const sendMessage = async (req, res) => {
     // verify document belongs to user
     const document = await Document.findOne({
       _id: documentId,
-      userId: req.userId
+      userId: req.user._id
     })
     if (!document) {
       return res.status(404).json({ message: 'Document not found' })
     }
 
     // get or create chat for this document
-    let chat = await Chat.findOne({ userId: req.userId, documentId })
+    let chat = await Chat.findOne({ userId: req.user._id, documentId })
     if (!chat) {
-      chat = await Chat.create({ userId: req.userId, documentId, messages: [] })
+      chat = await Chat.create({ userId: req.user._id, documentId, messages: [] })
     }
 
     // push user message
     chat.messages.push({ role: 'user', content: message })
 
-    // TODO: call Python service for RAG response
-    // const response = await ragChat(message, document.pineconeNamespace, chat.messages.slice(-MAX_HISTORY))
-    const response = 'Python AI service not connected yet'
+    let response
+    try {
+      const ragRes = await axios.post(`${PYTHON_SERVICE_URL}/chat`, {
+        query: message,
+        history: chat.messages.slice(-MAX_HISTORY).map(m => ({ role: m.role, content: m.content }))
+      })
+      response = ragRes.data.response
+    } catch (ragErr) {
+      console.error('AI service error:', ragErr.message)
+      response = 'Sorry, the AI service is currently unavailable.'
+    }
 
     // push assistant message
     chat.messages.push({ role: 'assistant', content: response })
@@ -49,7 +56,7 @@ export const sendMessage = async (req, res) => {
 export const getChatHistory = async (req, res) => {
   try {
     const chat = await Chat.findOne({
-      userId: req.userId,
+      userId: req.user._id,
       documentId: req.params.documentId
     })
 

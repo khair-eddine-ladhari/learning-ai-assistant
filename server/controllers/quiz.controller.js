@@ -13,38 +13,41 @@ export const generateQuiz = async (req, res) => {
 
     const document = await Document.findOne({
       _id: documentId,
-      userId: req.userId
+      userId: req.user._id
     })
     if (!document) {
       return res.status(404).json({ message: 'Document not found' })
     }
 
-    // TODO: call Python service to generate quiz
-    // const questions = await generateQuizFromPDF(document.pineconeNamespace)
-    const questions = []
+    // TEMP: hardcoded questions to test frontend
+    const questions = [
+      {
+        question: "What is the capital of France?",
+        options: ["Berlin", "Madrid", "Paris", "Rome"],
+        answer: "C",
+        explanation: "Paris is the capital and most populous city of France."
+      },
+      {
+        question: "Which language runs in a web browser?",
+        options: ["Java", "C", "Python", "JavaScript"],
+        answer: "D",
+        explanation: "JavaScript is the only language that runs natively in browsers."
+      },
+      {
+        question: "What does CSS stand for?",
+        options: ["Central Style Sheets", "Cascading Style Sheets", "Cascading Simple Sheets", "Cars SUVs Sailboats"],
+        answer: "B",
+        explanation: "CSS stands for Cascading Style Sheets."
+      }
+    ]
 
     const quiz = await Quiz.create({
-      userId: req.userId,
+      userId: req.user._id,
       documentId,
       questions
     })
 
-    res.status(201).json(quiz)
-
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-}
-
-// GET /api/quiz/:documentId
-export const getQuizzes = async (req, res) => {
-  try {
-    const quizzes = await Quiz.find({
-      userId: req.userId,
-      documentId: req.params.documentId
-    }).sort({ createdAt: -1 })
-
-    res.json(quizzes)
+    res.status(201).json({ questions })
 
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -56,7 +59,7 @@ export const getQuiz = async (req, res) => {
   try {
     const quiz = await Quiz.findOne({
       _id: req.params.quizId,
-      userId: req.userId,
+      userId:req.user._id ,
       documentId: req.params.documentId
     })
 

@@ -85,6 +85,17 @@ const Icon = {
       <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   ),
+  edit: (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+),
+x: (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+),
 };
 
 // ── Tab Button ─────────────────────────────────────────────────────
@@ -109,6 +120,8 @@ const MessageBubble = ({ msg }) => {
 
   const copy = () => {
     navigator.clipboard.writeText(msg.content);
+
+
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -268,26 +281,79 @@ const QuizPanel = ({ docId }) => {
 
 // ── Notes Component ────────────────────────────────────────────────
 const NotesPanel = ({ docId }) => {
-  const [notes, setNotes] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(`notes-${docId}`)) || []; } catch { return []; }
-  });
+  const [notes, setNotes] = useState([]);
   const [input, setInput] = useState("");
+  const token = sessionStorage.getItem("token");
 
-  const save = (updated) => {
-    setNotes(updated);
-    localStorage.setItem(`notes-${docId}`, JSON.stringify(updated));
+  const getNotes = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/notes/${docId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotes(response.data);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const add = () => {
+  useEffect(() => {
+    getNotes();
+  }, [docId]);
+
+  const add = async () => {
     if (!input.trim()) return;
-    save([{ id: Date.now(), text: input.trim(), ts: new Date().toISOString() }, ...notes]);
-    setInput("");
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/notes/${docId}`,
+        { text: input.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNotes([response.data, ...notes]);
+      setInput("");
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const del = (id) => save(notes.filter(n => n.id !== id));
+  const del = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/api/notes/${docId}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotes(notes.filter((n) => n._id !== id));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
-  const fmt = (iso) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const fmt = (iso) =>
+    new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
+
+
+
+  const [editingId, setEditingId] = useState(null);
+const [editText, setEditText] = useState("");
+
+const startEdit = (n) => {
+  setEditingId(n._id);
+  setEditText(n.text);
+};
+
+const saveEdit = async (id) => {
+  if (!editText.trim()) return;
+  try {
+    const response = await axios.put(
+      `${API_URL}/api/notes/${docId}/${id}`,
+      { text: editText.trim() },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setNotes(notes.map((n) => (n._id === id ? response.data : n)));
+    setEditingId(null);
+  } catch (e) {
+    console.error(e);
+  }
+};
   return (
     <div className="flex flex-col gap-3">
       {/* Input */}
@@ -318,20 +384,45 @@ const NotesPanel = ({ docId }) => {
         <div className="text-center py-8 text-gray-300 text-sm">No notes yet</div>
       ) : (
         <div className="space-y-2">
-          {notes.map(n => (
-            <div key={n.id} className="group bg-white border border-gray-100 rounded-xl px-4 py-3 hover:border-gray-200 transition-colors">
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{n.text}</p>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-gray-300">{fmt(n.ts)}</span>
-                <button
-                  onClick={() => del(n.id)}
-                  className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all"
-                >
-                  {Icon.trash}
-                </button>
-              </div>
-            </div>
-          ))}
+        {notes.map(n => (
+  <div key={n._id} className="group bg-white border border-gray-100 rounded-xl px-4 py-3 hover:border-gray-200 transition-colors">
+    {editingId === n._id ? (
+      <textarea
+        value={editText}
+        onChange={(e) => setEditText(e.target.value)}
+        className="w-full text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-gray-300"
+        rows={3}
+        autoFocus
+      />
+    ) : (
+      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{n.text}</p>
+    )}
+    <div className="flex items-center justify-between mt-2">
+      <span className="text-xs text-gray-300">{fmt(n.createdAt)}</span>
+      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+        {editingId === n._id ? (
+          <>
+            <button onClick={() => saveEdit(n._id)} className="text-gray-300 hover:text-green-500">
+              {Icon.check}
+            </button>
+            <button onClick={() => setEditingId(null)} className="text-gray-300 hover:text-gray-500">
+              {Icon.x}
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => startEdit(n)} className="text-gray-300 hover:text-blue-400">
+              {Icon.edit}
+            </button>
+            <button onClick={() => del(n._id)} className="text-gray-300 hover:text-red-400">
+              {Icon.trash}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+))}
         </div>
       )}
     </div>
@@ -351,7 +442,7 @@ const SummaryPanel = ({ docId }) => {
         { message: "Please provide a comprehensive summary of this document. Include the main topics, key points, and important conclusions." },
         { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
       );
-      setSummary(res.data.reply || res.data.message || "");
+      setSummary(res.data.response || "");
     } catch (e) {
       console.error(e);
     } finally {
@@ -404,14 +495,28 @@ export default function ChatPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [doc, setDoc] = useState(null);
-  const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hi! I've read this document and I'm ready to answer your questions. What would you like to know?" }
-  ]);
+  
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState("chat");
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  const [messages, setMessages] = useState([]);
+
+useEffect(() => {
+  axios.get(`${API_URL}/api/chat/${id}`, {
+    headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+  }).then(res => {
+    if (res.data.messages.length > 0) {
+      setMessages(res.data.messages);
+    } else {
+      setMessages([
+        { role: "assistant", content: "Hi! I've read this document and I'm ready to answer your questions. What would you like to know?" }
+      ]);
+    }
+  }).catch(console.error);
+}, [id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -434,7 +539,7 @@ export default function ChatPage() {
         { message: userMsg.content },
         { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
       );
-      setMessages(m => [...m, { role: "assistant", content: res.data.reply || res.data.message }]);
+      setMessages(m => [...m, { role: "assistant", content: res.data.response }]);
     } catch {
       setMessages(m => [...m, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
