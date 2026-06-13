@@ -6,8 +6,9 @@ import mongoose from 'mongoose'
 
 const questionSchema = new mongoose.Schema({
   question: String,
-  options: [String],        // 4 options
-  correctAnswer: Number     // index of correct option (0-3)
+  options: [String],
+  answer: String,        // "A", "B", "C", or "D" — matches Python output
+  explanation: String    // optional but useful
 })
 
 const quizSchema = new mongoose.Schema({

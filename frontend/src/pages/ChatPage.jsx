@@ -182,7 +182,24 @@ const QuizPanel = ({ docId }) => {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [revealed, setRevealed] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+
+   useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/quiz/${docId}`, {
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+        });
+        setQuestions(res.data.questions || []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchQuiz();
+  }, [docId]);
 
   const generate = async () => {
     setLoading(true);

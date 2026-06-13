@@ -45,17 +45,13 @@ export const generateQuiz = async (req, res) => {
 export const getQuiz = async (req, res) => {
   try {
     const quiz = await Quiz.findOne({
-      _id: req.params.quizId,
-      userId:req.user._id ,
+      userId: req.user._id,
       documentId: req.params.documentId
     })
 
-    if (!quiz) {
-      return res.status(404).json({ message: 'Quiz not found' })
-    }
+    if (!quiz) return res.json({ questions: [] })
 
-    res.json(quiz)
-
+    res.json({ questions: quiz.questions })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

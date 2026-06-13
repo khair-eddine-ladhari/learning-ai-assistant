@@ -19,7 +19,8 @@ const router = express.Router()
 router.post('/:documentId', passport.authenticate('jwt', { session: false }),
 rolesMiddleware(['admin', 'user']), generateQuiz)
 
-router.get('/:documentId/:quizId', passport.authenticate('jwt', { session: false }),
+
+router.get('/:documentId', passport.authenticate('jwt', { session: false }),
 rolesMiddleware(['admin', 'user']), getQuiz)
 
 export default router
