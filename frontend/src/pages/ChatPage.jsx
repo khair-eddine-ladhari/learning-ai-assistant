@@ -237,8 +237,8 @@ const QuizPanel = ({ docId }) => {
             {q.options?.map((opt, j) => {
               const letter = ["A", "B", "C", "D"][j];
               const isSelected = answers[i] === letter;
-              const isCorrect = revealed[i] && letter === q.answer;
-              const isWrong = revealed[i] && isSelected && letter !== q.answer;
+             const isCorrect = revealed[i] && opt === q.answer;
+              const isWrong = revealed[i] && isSelected && opt !== q.answer;
               return (
                 <button
                   key={j}
@@ -432,24 +432,48 @@ const saveEdit = async (id) => {
 // ── Summary Panel ──────────────────────────────────────────────────
 const SummaryPanel = ({ docId }) => {
   const [summary, setSummary] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // true initially, since we're fetching
+  const token = sessionStorage.getItem("token");
 
+  // Fetch existing summary on mount
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/chat/${docId}/summary`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setSummary(res.data.summary || "");
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSummary();
+  }, [docId]);
+
+  // Generate a new summary
   const generate = async () => {
     setLoading(true);
-    setSummary("");
     try {
       const res = await axios.post(`${API_URL}/api/chat/${docId}`,
         { message: "Please provide a comprehensive summary of this document. Include the main topics, key points, and important conclusions." },
-        { headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      setSummary(res.data.response || "");
+      const newSummary = res.data.response || "";
+      setSummary(newSummary);
+
+      // save it so it persists
+      await axios.put(`${API_URL}/api/chat/${docId}/summary`,
+        { summary: newSummary },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
   };
-
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-400">
       <div className="animate-spin w-6 h-6 border-2 border-gray-200 border-t-gray-600 rounded-full" />

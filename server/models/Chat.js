@@ -27,7 +27,11 @@ const chatSchema = new mongoose.Schema({
     ref: 'Document',
     required: true
   },
-  messages: [messageSchema]
+  messages: [messageSchema],
+  summary: {
+    type: String,
+    default: ""
+  }
 }, { timestamps: true })
 
 export default mongoose.model('Chat', chatSchema)

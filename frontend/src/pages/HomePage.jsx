@@ -262,7 +262,16 @@ export default function HomePage() {
     navigate("/")
   }
 
-  const handleDelete = (id) => setDocuments((prev) => prev.filter((d) => d._id !== id))
+  const handleDelete = async (id) => {
+  try {
+    await axios.delete(`${API_URL}/api/documents/${id}`, {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+    });
+    setDocuments((prev) => prev.filter((d) => d._id !== id));
+  } catch (e) {
+    console.error(e);
+  }
+};
 
   const filtered = documents.filter((d) =>
     d.originalName.toLowerCase().includes(search.toLowerCase())

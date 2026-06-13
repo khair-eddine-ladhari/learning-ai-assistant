@@ -33,6 +33,7 @@ export const sendMessage = async (req, res) => {
     try {
       const ragRes = await axios.post(`${PYTHON_SERVICE_URL}/chat`, {
         query: message,
+        namespace: document.pineconeNamespace,
         history: chat.messages.slice(-MAX_HISTORY).map(m => ({ role: m.role, content: m.content }))
       })
       response = ragRes.data.response
@@ -65,6 +66,47 @@ export const getChatHistory = async (req, res) => {
     }
 
     res.json({ messages: chat.messages })
+
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
+
+
+// GET /api/documents/:id/summary
+// GET /api/chat/:documentId/summary
+// GET /api/chat/:documentId/summary
+export const getSummary = async (req, res) => {
+  try {
+    const chat = await Chat.findOne({
+      userId: req.user._id,
+      documentId: req.params.documentId
+    })
+
+    if (!chat) {
+      return res.json({ summary: "" })
+    }
+
+    res.json({ summary: chat.summary || "" })
+
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
+
+
+// PUT /api/chat/:documentId/summary
+export const saveSummary = async (req, res) => {
+  try {
+    const chat = await Chat.findOneAndUpdate(
+      { userId: req.user._id, documentId: req.params.documentId },
+      { summary: req.body.summary },
+      { new: true, upsert: true } // upsert: create if no chat doc exists yet
+    )
+
+    res.json({ summary: chat.summary })
 
   } catch (err) {
     res.status(500).json({ message: err.message })

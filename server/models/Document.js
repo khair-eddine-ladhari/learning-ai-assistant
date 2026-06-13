@@ -1,7 +1,3 @@
-
-
-
-
 // models/Document.js
 import mongoose from 'mongoose'
 
@@ -16,6 +12,10 @@ const documentSchema = new mongoose.Schema({
     required: true
   },
   originalName: {
+    type: String,
+    required: true
+  },
+  fileUrl: {
     type: String,
     required: true
   },
