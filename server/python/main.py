@@ -78,34 +78,42 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
 
 @app.post("/process", response_model=ProcessResponse)
 async def process_pdf(req: ProcessRequest):
-    resp = requests.get(req.file_url)
-    resp.raise_for_status()
+    try:
+        print("Starting processing for namespace:", req.namespace)
+        
+        resp = requests.get(req.file_url)
+        resp.raise_for_status()
+        print("PDF downloaded")
 
-    reader = PdfReader(BytesIO(resp.content))
-    full_text = ""
-    for page in reader.pages:
-        full_text += (page.extract_text() or "") + "\n"
+        reader = PdfReader(BytesIO(resp.content))
+        full_text = ""
+        for page in reader.pages:
+            full_text += (page.extract_text() or "") + "\n"
+        print("Text extracted, length:", len(full_text))
 
-    chunks = chunk_text(full_text)
-    if not chunks:
-        return ProcessResponse(status="no_text_found", chunks=0)
+        chunks = chunk_text(full_text)
+        print("Chunks created:", len(chunks))
 
-    embeddings = embedder.encode(chunks).tolist()
+        embeddings = embedder.encode(chunks).tolist()
+        print("Embeddings done")
 
-    vectors = [
-        {"id": f"{req.namespace}-{i}", "values": embeddings[i], "metadata": {"text": chunks[i]}}
-        for i in range(len(chunks))
-    ]
-    index.upsert(vectors=vectors, namespace=req.namespace)
+        vectors = [
+    {"id": f"{req.namespace}-{i}", "values": embeddings[i], "metadata": {"text": chunks[i]}}
+    for i in range(len(chunks))
+]
+        index.upsert(vectors=vectors, namespace=req.namespace)
+        print("Upserted to Pinecone")
 
+        callback = requests.post(f"http://localhost:{PORT}/api/documents/status",
+            json={"namespace": req.namespace, "status": "ready"})
+        print("Callback status:", callback.status_code)
 
-
-    requests.post(f"http://localhost:{PORT}/api/documents/status",
-     json={"namespace": req.namespace, "status": "ready"})
-
-    return ProcessResponse(status="done", chunks=len(chunks))
-
-
+        return ProcessResponse(status="done", chunks=len(chunks))
+    except Exception as e:
+        print("ERROR:", e)
+        requests.post(f"http://localhost:{PORT}/api/documents/status",
+            json={"namespace": req.namespace, "status": "failed"})
+        raise e
 # ---------- /chat ----------
 class Message(BaseModel):
     role: str

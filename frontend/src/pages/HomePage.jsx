@@ -260,14 +260,14 @@ export default function HomePage() {
   const [search, setSearch] = useState('')
   const [fetching, setFetching] = useState(true)
 
-  useEffect(() => {
-    console.log("👤 user changed:", user)
-  }, [user])
+ 
 
  useEffect(() => {
     const token = sessionStorage.getItem("token")
     if (!token) { setFetching(false); return }
     axios.get(`${API_URL}/api/documents`, {
+    
+    
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => setDocuments(res.data))

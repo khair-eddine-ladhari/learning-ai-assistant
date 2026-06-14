@@ -71,31 +71,28 @@ export default function RegisterPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (name.trim().length < 3) {
-  setError('Name must be at least 3 characters')
-  return
-}
-    if (!form.name.trim()) return setError("Please enter your name.");
-    if (form.password !== form.confirm) return setError("Passwords don't match.");
-    if (form.password.length < 6) return setError("Password must be at least 6 characters.");
-    if(!form.email.includes('@')) return setError("Invalid email.");
-    setLoading(true);
-    try {
-      console.log(API_URL);
-      const res = await axios.post(`${API_URL}/api/auth/register`, form);
-      sessionStorage.setItem("token", res.data.token);
-      login(res.data);
-      navigate("/homepage");
-    } catch (err) {
-      console.log(err);
-      console.log(err.response);
-      setError(err.response?.data?.message || err.message || "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  setError("");
+
+  if (!form.name.trim()) return setError("Please enter your name.");
+  if (form.name.trim().length < 3) return setError("Name must be at least 3 characters.");
+  if (form.password !== form.confirm) return setError("Passwords don't match.");
+  if (form.password.length < 6) return setError("Password must be at least 6 characters.");
+  if (!form.email.includes('@')) return setError("Invalid email.");
+
+  setLoading(true);
+  try {
+    const res = await axios.post(`${API_URL}/api/auth/register`, form);
+    sessionStorage.setItem("token", res.data.token);
+    login(res.data);
+    navigate("/homepage");
+  } catch (err) {
+    console.log(err);
+    setError(err.response?.data?.message || err.message || "Something went wrong.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{ background: "white", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", paddingTop: "76px", paddingBottom: "48px", position: "relative", overflowX: "hidden" }}>

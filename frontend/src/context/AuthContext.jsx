@@ -10,7 +10,7 @@ import { useEffect } from "react";
 export const GlobalContext = createContext();
 const API_URL = import.meta.env.VITE_API_URL
 export default function GlobalState({ children }) {
-     console.log("🌍 GlobalState mounted, API_URL:", import.meta.env.VITE_API_URL)
+    
   const navigate = useNavigate();
 
 
@@ -22,20 +22,21 @@ const [loading, setLoading] = useState(true); // ✅ add this
 
 useEffect(() => {
   const token = sessionStorage.getItem('token');
-  console.log("🔑 token found:", token); // add this
+ 
 
   if (!token) {
     setLoading(false);
     return;
   }
 
-  console.log("📡 calling auth/me at:", `${API_URL}/api/auth/me`); // add this
+
+
 
   axios.get(`${API_URL}/api/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
   })
     .then(res => {
-      console.log("✅ user restored:", res.data);
+     
       const { password, __v, ...safeUser } = res.data;
       setUser(safeUser);
     })
