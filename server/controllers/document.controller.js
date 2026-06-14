@@ -105,3 +105,16 @@ export const deleteDocument = async (req, res) => {
     res.status(500).json({ message: err.message })
   }
 }
+
+export const updateDocumentStatus = async (req, res) => {
+  try {
+    const { namespace, status } = req.body
+    await Document.findOneAndUpdate(
+      { pineconeNamespace: namespace },
+      { status }
+    )
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}

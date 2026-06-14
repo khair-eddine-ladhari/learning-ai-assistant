@@ -15,8 +15,13 @@ import tiktoken
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
+import os
+from dotenv import load_dotenv
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
+load_dotenv()
+
+PORT = int(os.getenv("PORT", 5000))
 # --- clients ---
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 embedder = SentenceTransformer("mixedbread-ai/mxbai-embed-large-v1")
@@ -92,6 +97,11 @@ async def process_pdf(req: ProcessRequest):
         for i in range(len(chunks))
     ]
     index.upsert(vectors=vectors, namespace=req.namespace)
+
+
+
+    requests.post(f"http://localhost:{PORT}/api/documents/status",
+     json={"namespace": req.namespace, "status": "ready"})
 
     return ProcessResponse(status="done", chunks=len(chunks))
 
@@ -218,3 +228,14 @@ class DeleteNamespaceRequest(BaseModel):
 async def delete_namespace(req: DeleteNamespaceRequest):
     index.delete(delete_all=True, namespace=req.namespace)
     return {"status": "deleted"}
+
+
+
+
+class CompleteRequest(BaseModel):
+    namespace: str
+    status: str  # "ready" or "failed"
+
+@app.post("/process-complete")
+async def process_complete(req: CompleteRequest):
+    return {"status": req.status}
