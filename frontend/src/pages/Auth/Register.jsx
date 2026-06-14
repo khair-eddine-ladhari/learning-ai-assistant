@@ -73,9 +73,14 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (name.trim().length < 3) {
+  setError('Name must be at least 3 characters')
+  return
+}
     if (!form.name.trim()) return setError("Please enter your name.");
     if (form.password !== form.confirm) return setError("Passwords don't match.");
     if (form.password.length < 6) return setError("Password must be at least 6 characters.");
+    if(!form.email.includes('@')) return setError("Invalid email.");
     setLoading(true);
     try {
       console.log(API_URL);

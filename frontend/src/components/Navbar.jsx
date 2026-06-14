@@ -49,18 +49,18 @@ const Navbar = () => {
           {/* CTA buttons */}
           <div className="flex items-center gap-3">
             {loading ? null : user ? (
-              <button onClick={logout} className="text-slate-300 hover:text-white text-sm transition-colors duration-200">
+              <button onClick={logout} className="text-slate-300 hover:text-white text-sm transition-colors duration-200 cursor-pointer">
                 Sign out
               </button>
             ) : (
-              <button onClick={() => navigate("/login")} className="text-slate-300 hover:text-white text-sm transition-colors duration-200">
+              <button onClick={() => navigate("/login")} className="text-slate-300 hover:text-white text-sm transition-colors duration-200 cursor-pointer">
                 Sign in
               </button>
             )}
 
             <button
               onClick={() => navigate("/homepage")}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white transition-all duration-200 shadow-lg shadow-teal-500/25"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white transition-all duration-200 shadow-lg shadow-teal-500/25 cursor-pointer"
             >
               Get started
             </button>

@@ -102,7 +102,7 @@ x: (
 const TabBtn = ({ icon, label, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full
+    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full cursor-pointer
       ${active
         ? "bg-gray-100 text-gray-900"
         : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -149,7 +149,7 @@ const MessageBubble = ({ msg }) => {
           <button
             onClick={copy}
             className="absolute -bottom-5 left-0 opacity-0 group-hover:opacity-100 transition-opacity
-                       flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                       flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
           >
             {copied ? Icon.check : Icon.copy}
             {copied ? "Copied" : "Copy"}
@@ -236,7 +236,7 @@ const QuizPanel = ({ docId }) => {
       </div>
       <button
         onClick={generate}
-        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
       >
         Generate Quiz
       </button>
@@ -260,7 +260,7 @@ const QuizPanel = ({ docId }) => {
                 <button
                   key={j}
                   onClick={() => !revealed[i] && setAnswers(a => ({ ...a, [i]: letter }))}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all border
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all border cursor-pointer
                     ${isCorrect ? "bg-green-50 border-green-300 text-green-800"
                       : isWrong ? "bg-red-50 border-red-300 text-red-700"
                       : isSelected ? "border-gray-900 bg-gray-50 text-gray-900"
@@ -274,7 +274,7 @@ const QuizPanel = ({ docId }) => {
           {answers[i] && !revealed[i] && (
             <button
               onClick={() => setRevealed(r => ({ ...r, [i]: true }))}
-              className="mt-3 text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2"
+              className="mt-3 text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2 cursor-pointer"
             >
               Check answer
             </button>
@@ -288,7 +288,7 @@ const QuizPanel = ({ docId }) => {
       ))}
       <button
         onClick={generate}
-        className="w-full py-2.5 border border-dashed border-gray-200 text-sm text-gray-400 hover:text-gray-600 hover:border-gray-300 rounded-xl transition-colors"
+        className="w-full py-2.5 border border-dashed border-gray-200 text-sm text-gray-400 hover:text-gray-600 hover:border-gray-300 rounded-xl transition-colors cursor-pointer"
       >
         Regenerate quiz
       </button>
@@ -389,7 +389,7 @@ const saveEdit = async (id) => {
             onClick={add}
             disabled={!input.trim()}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg
-                       hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                       hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             {Icon.add} Add note
           </button>
@@ -419,19 +419,19 @@ const saveEdit = async (id) => {
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
         {editingId === n._id ? (
           <>
-            <button onClick={() => saveEdit(n._id)} className="text-gray-300 hover:text-green-500">
+            <button onClick={() => saveEdit(n._id)} className="text-gray-300 hover:text-green-500 cursor-pointer">
               {Icon.check}
             </button>
-            <button onClick={() => setEditingId(null)} className="text-gray-300 hover:text-gray-500">
+            <button onClick={() => setEditingId(null)} className="text-gray-300 hover:text-gray-500 cursor-pointer">
               {Icon.x}
             </button>
           </>
         ) : (
           <>
-            <button onClick={() => startEdit(n)} className="text-gray-300 hover:text-blue-400">
+            <button onClick={() => startEdit(n)} className="text-gray-300 hover:text-blue-400 cursor-pointer">
               {Icon.edit}
             </button>
-            <button onClick={() => del(n._id)} className="text-gray-300 hover:text-red-400">
+            <button onClick={() => del(n._id)} className="text-gray-300 hover:text-red-400 cursor-pointer">
               {Icon.trash}
             </button>
           </>
@@ -509,7 +509,7 @@ const SummaryPanel = ({ docId }) => {
       </div>
       <button
         onClick={generate}
-        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
       >
         Summarize
       </button>
@@ -523,7 +523,7 @@ const SummaryPanel = ({ docId }) => {
       </div>
       <button
         onClick={generate}
-        className="w-full py-2.5 border border-dashed border-gray-200 text-sm text-gray-400 hover:text-gray-600 hover:border-gray-300 rounded-xl transition-colors"
+        className="w-full py-2.5 border border-dashed border-gray-200 text-sm text-gray-400 hover:text-gray-600 hover:border-gray-300 rounded-xl transition-colors cursor-pointer"
       >
         Regenerate summary
       </button>
@@ -563,11 +563,38 @@ useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  useEffect(() => {
-    axios.get(`${API_URL}/api/documents/${id}`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
-    }).then(res => setDoc(res.data)).catch(console.error);
-  }, [id]);
+useEffect(() => {
+  // fetch immediately on mount
+  const fetchDoc = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/documents/${id}`, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+      });
+      setDoc(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  fetchDoc();
+
+  // then poll every 3s until ready
+  const interval = setInterval(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/documents/${id}`, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+      });
+      setDoc(res.data);
+      if (res.data.status !== 'pending') {
+        clearInterval(interval);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [id]);
 
   const send = async () => {
     if (!input.trim() || loading) return;
@@ -649,7 +676,7 @@ useEffect(() => {
               { id: "notes", icon: Icon.note, label: "Notes" },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-xs transition-colors
+                className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer
                   ${tab === t.id ? "bg-gray-100 text-gray-800" : "text-gray-400"}`}>
                 {t.icon}{t.label}
               </button>
@@ -667,7 +694,7 @@ useEffect(() => {
                 {suggestions.map((s, i) => (
                   <button key={i} onClick={() => { setInput(s); inputRef.current?.focus(); }}
                     className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs rounded-full
-                               hover:border-gray-400 hover:text-gray-800 transition-colors">
+                               hover:border-gray-400 hover:text-gray-800 transition-colors cursor-pointer">
                     {s}
                   </button>
                 ))}
@@ -682,23 +709,24 @@ useEffect(() => {
             <div className="flex gap-2 items-end bg-white border border-gray-200 rounded-2xl px-4 py-3
                             focus-within:border-gray-400 transition-colors shadow-sm">
               <textarea
-                ref={inputRef}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                placeholder="Ask anything about this document…"
-                rows={1}
-                className="flex-1 resize-none outline-none text-sm text-gray-800 placeholder-gray-300 leading-relaxed bg-transparent"
-                style={{ maxHeight: "120px" }}
-              />
-              <button
-                onClick={send}
-                disabled={!input.trim() || loading}
-                className="w-8 h-8 flex items-center justify-center bg-gray-900 text-white rounded-xl
-                           hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0"
-              >
-                {loading ? Icon.loader : Icon.send}
-              </button>
+  ref={inputRef}
+  value={input}
+  onChange={e => setInput(e.target.value)}
+  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+  placeholder={!doc || doc.status === 'pending' ? "Document is being processed, please wait…" : "Ask anything about this document…"}
+  rows={1}
+  disabled={!doc || doc.status === 'pending'}
+  className="flex-1 resize-none outline-none text-sm text-gray-800 placeholder-gray-300 leading-relaxed bg-transparent disabled:opacity-50"
+  style={{ maxHeight: "120px" }}
+/>
+<button
+  onClick={send}
+disabled={!input.trim() || loading || !doc || doc.status === 'pending'}
+  className="w-8 h-8 flex items-center justify-center bg-gray-900 text-white rounded-xl
+             hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0 cursor-pointer"
+>
+  {loading ? Icon.loading : Icon.send}
+</button>
             </div>
             <p className="text-center text-xs text-gray-300 mt-2">
               Answers are generated from this document · Always verify important information

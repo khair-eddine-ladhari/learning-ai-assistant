@@ -8,7 +8,8 @@ import {
   uploadDocument,
   getDocuments,
   getDocument,
-  deleteDocument
+  deleteDocument,
+  updateDocumentStatus
 } from '../controllers/document.controller.js'
 import rolesMiddleware from '../middleware/roles.middleware.js'
 import upload from '../middleware/upload.middleware.js'
@@ -33,5 +34,8 @@ rolesMiddleware(['admin', 'user']),getDocument)
 
 router.delete('/:id' , passport.authenticate('jwt', { session: false }),
 rolesMiddleware(['admin', 'user']),deleteDocument)
+
+
+router.post('/status', updateDocumentStatus)
 
 export default router

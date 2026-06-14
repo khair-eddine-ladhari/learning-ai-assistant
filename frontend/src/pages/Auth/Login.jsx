@@ -77,6 +77,8 @@ export default function LoginPage() {
     try {
       if (!form.email.trim()) return setError("Please enter your email.");
       if (!form.password.trim()) return setError("Please enter your password.");
+      if(!form.email.includes('@')) return setError("Invalid email.");
+      if (form.password.length < 6) return setError("Password must be at least 6 characters.");
       const res = await axios.post(`${API_URL}/api/auth/login`, form);
       sessionStorage.setItem("token", res.data.token);
       login(res.data);

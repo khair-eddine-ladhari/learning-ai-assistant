@@ -14,6 +14,18 @@ export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body
 
+    if(!email.includes('@')) {
+      return res.status(400).json({ message: 'Invalid email' })
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' })
+    }
+
+    if (!name || name.trim().length < 3) {
+  return res.status(400).json({ message: 'Name must be at least 3 characters' })
+}
+
     const userExists = await User.findOne({ email })
     if (userExists) {
       return res.status(400).json({ message: 'Email already exists' })
@@ -45,6 +57,18 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'All fields are required' })
+    }
+
+    if(!email.includes('@')) {
+      return res.status(400).json({ message: 'Invalid email' })
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' })
+    }
 
     const user = await User.findOne({ email })
     if (!user) {

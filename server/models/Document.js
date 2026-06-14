@@ -23,7 +23,12 @@ const documentSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true
-  }
+  },
+  status: {
+  type: String,
+  enum: ['pending', 'ready', 'failed'],
+  default: 'pending'
+}
 }, { timestamps: true })
 
 export default mongoose.model('Document', documentSchema)

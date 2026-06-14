@@ -49,17 +49,35 @@ const DocumentCard = ({ doc, onDelete, onClick }) => {
         </svg>
       </div>
 
-      {/* Name + date */}
-      <div style={{ flex: 1 }}>
-        <p style={{
-          fontSize: '13px', fontWeight: '600', color: '#111',
-          lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical', overflow: 'hidden',
-        }}>
-          {doc.originalName}
-        </p>
-        <p style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}>{formatDate(doc.createdAt)}</p>
-      </div>
+      
+     {/* Name + date */}
+<div style={{ flex: 1 }}>
+  <p style={{
+    fontSize: '13px', fontWeight: '600', color: '#111',
+    lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical', overflow: 'hidden',
+  }}>
+    {doc.originalName}
+  </p>
+  <p style={{ fontSize: '11px', color: '#bbb', marginTop: '4px' }}>{formatDate(doc.createdAt)}</p>
+
+  {/* Status badge */}
+  {doc.status === 'pending' && (
+    <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: '#fefce8', color: '#a16207', border: '1px solid #fde68a' }}>
+      Processing...
+    </span>
+  )}
+  {doc.status === 'ready' && (
+    <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+      Ready
+    </span>
+  )}
+  {doc.status === 'failed' && (
+    <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+      Failed
+    </span>
+  )}
+</div>
 
       {/* Three-dot menu */}
       <div
@@ -246,7 +264,7 @@ export default function HomePage() {
     console.log("👤 user changed:", user)
   }, [user])
 
-  useEffect(() => {
+ useEffect(() => {
     const token = sessionStorage.getItem("token")
     if (!token) { setFetching(false); return }
     axios.get(`${API_URL}/api/documents`, {
@@ -256,6 +274,28 @@ export default function HomePage() {
       .catch((err) => console.error("Failed to fetch documents:", err))
       .finally(() => setFetching(false))
   }, [])
+
+  // ← add here
+  useEffect(() => {
+    const pendingDocs = documents.filter(d => d.status === 'pending');
+    if (pendingDocs.length === 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/documents`, {
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+        });
+        setDocuments(res.data);
+        if (res.data.every(d => d.status !== 'pending')) {
+          clearInterval(interval);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [documents]);
 
   const signOutfunction = () => {
     logout()
