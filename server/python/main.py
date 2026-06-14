@@ -104,7 +104,9 @@ async def process_pdf(req: ProcessRequest):
         index.upsert(vectors=vectors, namespace=req.namespace)
         print("Upserted to Pinecone")
 
-        callback = requests.post(f"http://localhost:{PORT}/api/documents/status",
+        NODE_URL = os.getenv("NODE_SERVICE_URL", f"http://localhost:{PORT}")
+
+        callback = requests.post(f"{NODE_URL}/api/documents/status",
             json={"namespace": req.namespace, "status": "ready"})
         print("Callback status:", callback.status_code)
 

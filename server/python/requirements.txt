@@ -1,0 +1,14 @@
+
+
+
+fastapi
+uvicorn
+pypdf
+requests
+tiktoken
+groq
+sentence-transformers
+pinecone-client
+python-dotenv
+tenacity
+pydantic
