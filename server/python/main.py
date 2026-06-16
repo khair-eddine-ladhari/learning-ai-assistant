@@ -24,7 +24,7 @@ load_dotenv()
 PORT = int(os.getenv("PORT", 5000))
 # --- clients ---
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-embedder = SentenceTransformer("mixedbread-ai/mxbai-embed-large-v1")
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index = pc.Index(os.getenv("PINECONE_INDEX_NAME"))
