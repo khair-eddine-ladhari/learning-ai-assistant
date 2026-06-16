@@ -254,8 +254,8 @@ const QuizPanel = ({ docId }) => {
             {q.options?.map((opt, j) => {
               const letter = ["A", "B", "C", "D"][j];
               const isSelected = answers[i] === letter;
-             const isCorrect = revealed[i] && opt === q.answer;
-              const isWrong = revealed[i] && isSelected && opt !== q.answer;
+             const isCorrect = revealed[i] && letter === q.answer;
+            const isWrong = revealed[i] && isSelected && letter !== q.answer;
               return (
                 <button
                   key={j}
