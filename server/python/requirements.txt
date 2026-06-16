@@ -1,14 +1,10 @@
-
-
-
 fastapi
 uvicorn
 pypdf
 requests
 tiktoken
 groq
-sentence-transformers
-pinecone-client
+pinecone
 python-dotenv
 tenacity
 pydantic
