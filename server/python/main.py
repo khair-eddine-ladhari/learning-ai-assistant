@@ -13,21 +13,28 @@ from pydantic import BaseModel
 from typing import List, Optional
 import tiktoken
 from groq import Groq
-from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
-import os
-from dotenv import load_dotenv
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
-load_dotenv()
-
 PORT = int(os.getenv("PORT", 5000))
+
 # --- clients ---
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index = pc.Index(os.getenv("PINECONE_INDEX_NAME"))
+
+# Pinecone hosted embedding model (1024 dims) — replace local sentence-transformers
+EMBED_MODEL = "multilingual-e5-large"
+
+def embed_texts(texts: List[str], input_type: str = "passage") -> List[List[float]]:
+    """Embed a list of strings using Pinecone's hosted inference API."""
+    result = pc.inference.embed(
+        model=EMBED_MODEL,
+        inputs=texts,
+        parameters={"input_type": input_type, "truncate": "END"},
+    )
+    return [r["values"] for r in result]
 
 app = FastAPI()
 
@@ -40,11 +47,8 @@ app.add_middleware(
 )
 
 
-
-
 # tiktoken — free, no gating, close enough for estimating any model's tokens
 encoding = tiktoken.encoding_for_model("gpt-4o-mini")
-
 
 
 # --- shared retry wrapper ---
@@ -80,7 +84,7 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50):
 async def process_pdf(req: ProcessRequest):
     try:
         print("Starting processing for namespace:", req.namespace)
-        
+
         resp = requests.get(req.file_url)
         resp.raise_for_status()
         print("PDF downloaded")
@@ -94,13 +98,18 @@ async def process_pdf(req: ProcessRequest):
         chunks = chunk_text(full_text)
         print("Chunks created:", len(chunks))
 
-        embeddings = embedder.encode(chunks).tolist()
+        # Pinecone inference API caps batch size; chunk into groups of 96
+        embeddings = []
+        batch_size = 96
+        for start in range(0, len(chunks), batch_size):
+            batch = chunks[start:start + batch_size]
+            embeddings.extend(embed_texts(batch, input_type="passage"))
         print("Embeddings done")
 
         vectors = [
-    {"id": f"{req.namespace}-{i}", "values": embeddings[i], "metadata": {"text": chunks[i]}}
-    for i in range(len(chunks))
-]
+            {"id": f"{req.namespace}-{i}", "values": embeddings[i], "metadata": {"text": chunks[i]}}
+            for i in range(len(chunks))
+        ]
         index.upsert(vectors=vectors, namespace=req.namespace)
         print("Upserted to Pinecone")
 
@@ -116,6 +125,7 @@ async def process_pdf(req: ProcessRequest):
         requests.post(f"http://localhost:{PORT}/api/documents/status",
             json={"namespace": req.namespace, "status": "failed"})
         raise e
+
 # ---------- /chat ----------
 class Message(BaseModel):
     role: str
@@ -132,7 +142,7 @@ class ChatResponse(BaseModel):
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
-        query_vector = embedder.encode([req.query]).tolist()[0]
+        query_vector = embed_texts([req.query], input_type="query")[0]
 
         results = index.query(
             vector=query_vector,
@@ -165,16 +175,11 @@ async def chat(req: ChatRequest):
             messages.append({"role": h.role, "content": h.content})
         messages.append({"role": "user", "content": req.query})
 
-
-
-
-
         full_prompt = " ".join([m["content"] for m in messages])
         num_tokens = len(encoding.encode(full_prompt))
 
         if num_tokens > 6000:
             return ChatResponse(response="Your message and history are too long, please start a new conversation.")
-
 
         response = call_groq(messages)
         return ChatResponse(response=response.choices[0].message.content)
@@ -191,7 +196,7 @@ class QuizResponse(BaseModel):
 async def generate_quiz(req: dict):
     namespace = req.get("namespace")
 
-    dummy_vector = embedder.encode(["generate a quiz"]).tolist()[0]
+    dummy_vector = embed_texts(["generate a quiz"], input_type="query")[0]
     results = index.query(
         vector=dummy_vector,
         namespace=namespace,
@@ -226,11 +231,6 @@ Document content:
     return {"questions": questions}
 
 
-
-
-
-
-
 class DeleteNamespaceRequest(BaseModel):
     namespace: str
 
@@ -238,8 +238,6 @@ class DeleteNamespaceRequest(BaseModel):
 async def delete_namespace(req: DeleteNamespaceRequest):
     index.delete(delete_all=True, namespace=req.namespace)
     return {"status": "deleted"}
-
-
 
 
 class CompleteRequest(BaseModel):
