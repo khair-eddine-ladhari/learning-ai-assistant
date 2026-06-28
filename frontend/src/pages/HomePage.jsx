@@ -319,10 +319,19 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f9f9f9', fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } } @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} } * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } } @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} } * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        @media (max-width: 640px) {
+          .home-nav { padding: 0 16px !important; }
+          .home-main { padding: 24px 16px 40px !important; }
+          .home-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .home-header button { width: 100% !important; justify-content: center !important; }
+          .home-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 12px !important; }
+        }
+      `}</style>
 
       {/* ── Navbar ── */}
-      <nav style={{
+      <nav className="home-nav" style={{
         position: 'sticky', top: 0, zIndex: 40,
         background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)',
         borderBottom: '1px solid #f0f0f0',
@@ -360,10 +369,10 @@ export default function HomePage() {
       </nav>
 
       {/* ── Main ── */}
-      <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '48px 24px' }}>
+      <main className="home-main" style={{ maxWidth: '1000px', margin: '0 auto', padding: '48px 24px' }}>
 
         {/* Page header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', animation: 'fadeUp 0.5s ease both' }}>
+        <div className="home-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', animation: 'fadeUp 0.5s ease both' }}>
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#111', letterSpacing: '-0.5px' }}>My Documents</h1>
             <p style={{ fontSize: '13px', color: '#aaa', marginTop: '4px' }}>
@@ -438,7 +447,7 @@ export default function HomePage() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px', animation: 'fadeUp 0.4s ease both' }}>
+            <div className="home-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px', animation: 'fadeUp 0.4s ease both' }}>
               {filtered.map((doc) => (
                 <DocumentCard
                   key={doc._id}

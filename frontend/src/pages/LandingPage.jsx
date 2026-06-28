@@ -299,12 +299,22 @@ export default function LandingPage() {
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        @media (max-width: 768px) {
+          .landing-hero { padding-top: 112px !important; padding-bottom: 72px !important; }
+          .landing-stats { padding: 40px 16px !important; }
+          .landing-features, .landing-steps, .landing-tools, .landing-cta { padding-left: 16px !important; padding-right: 16px !important; padding-top: 72px !important; padding-bottom: 72px !important; }
+          .landing-steps-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .landing-tools-grid { grid-template-columns: 1fr !important; }
+          .landing-cta-card { padding: 40px 20px !important; }
+          .landing-footer { flex-direction: column !important; align-items: flex-start !important; }
+        }
       `}</style>
 
       <Navbar navigate={navigate} />
 
       {/* ── HERO ── */}
-      <section style={{ paddingTop: "140px", paddingBottom: "100px", paddingLeft: "24px", paddingRight: "24px", textAlign: "center", maxWidth: "960px", margin: "0 auto" }}>
+      <section className="landing-hero" style={{ paddingTop: "140px", paddingBottom: "100px", paddingLeft: "24px", paddingRight: "24px", textAlign: "center", maxWidth: "960px", margin: "0 auto" }}>
         {/* Badge */}
         <div style={{ animation: "fadeUp 0.6s ease both", display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 14px", borderRadius: "100px", border: "1px solid #e5e5e5", background: "#fafafa", marginBottom: "28px" }}>
           <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "blink 2s infinite" }} />
@@ -359,7 +369,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── STATS ── */}
-      <section style={{ borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", background: "#fafafa", padding: "48px 24px" }}>
+      <section className="landing-stats" style={{ borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", background: "#fafafa", padding: "48px 24px" }}>
         <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "32px", textAlign: "center" }}>
           {stats.map((s, i) => (
             <Reveal key={i} delay={i * 80}>
@@ -375,7 +385,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section style={{ padding: "96px 24px", maxWidth: "1040px", margin: "0 auto" }}>
+      <section className="landing-features" style={{ padding: "96px 24px", maxWidth: "1040px", margin: "0 auto" }}>
         <Reveal>
           <div style={{ textAlign: "center", marginBottom: "56px" }}>
             <p style={{ fontSize: "11px", fontWeight: "600", color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>Features</p>
@@ -394,8 +404,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section style={{ background: "#fafafa", borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", padding: "96px 24px" }}>
-        <div style={{ maxWidth: "960px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>
+      <section className="landing-steps" style={{ background: "#fafafa", borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", padding: "96px 24px" }}>
+        <div className="landing-steps-grid" style={{ maxWidth: "960px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>
 
           {/* Left */}
           <div>
@@ -461,7 +471,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── TOOLS SECTION ── */}
-      <section style={{ padding: "96px 24px", maxWidth: "960px", margin: "0 auto" }}>
+      <section className="landing-tools" style={{ padding: "96px 24px", maxWidth: "960px", margin: "0 auto" }}>
         <Reveal>
           <div style={{ textAlign: "center", marginBottom: "56px" }}>
             <p style={{ fontSize: "11px", fontWeight: "600", color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>Built-in tools</p>
@@ -471,7 +481,7 @@ export default function LandingPage() {
           </div>
         </Reveal>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1px", background: "#ebebeb", borderRadius: "16px", overflow: "hidden" }}>
+        <div className="landing-tools-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "1px", background: "#ebebeb", borderRadius: "16px", overflow: "hidden" }}>
           {[
             { label: "Chat", desc: "Ask anything, get grounded answers", icon: "💬" },
             { label: "Summary", desc: "One-click document overview", icon: "📋" },
@@ -492,9 +502,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section style={{ padding: "0 24px 96px", maxWidth: "720px", margin: "0 auto" }}>
+      <section className="landing-cta" style={{ padding: "0 24px 96px", maxWidth: "720px", margin: "0 auto" }}>
         <Reveal>
-          <div style={{
+          <div className="landing-cta-card" style={{
             background: "#0a0a0a", borderRadius: "24px", padding: "64px 48px", textAlign: "center",
             position: "relative", overflow: "hidden",
           }}>
@@ -522,7 +532,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ borderTop: "1px solid #f0f0f0", padding: "28px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "960px", margin: "0 auto", flexWrap: "wrap", gap: "12px" }}>
+      <footer className="landing-footer" style={{ borderTop: "1px solid #f0f0f0", padding: "28px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "960px", margin: "0 auto", flexWrap: "wrap", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div style={{ width: "22px", height: "22px", borderRadius: "6px", background: "#111", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none">

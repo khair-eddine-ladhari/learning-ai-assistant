@@ -623,10 +623,10 @@ useEffect(() => {
   ];
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div className="chat-shell h-screen bg-gray-50 flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ── Top bar ── */}
-      <header className="h-12 bg-white border-b border-gray-100 flex items-center px-4 gap-3 shrink-0 z-10">
+      <header className="chat-header h-12 bg-white border-b border-gray-100 flex items-center px-4 gap-3 shrink-0 z-10">
         <button
           onClick={() => navigate("/homepage")}
           className="flex items-center gap-1.5 text-gray-400 hover:text-gray-700 transition-colors text-sm"
@@ -651,10 +651,10 @@ useEffect(() => {
       </header>
 
       {/* ── Body ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="chat-body flex flex-1 overflow-hidden">
 
         {/* ── Left sidebar ── */}
-        <aside className="w-52 bg-white border-r border-gray-100 flex flex-col py-3 px-2 shrink-0 hidden md:flex">
+        <aside className="chat-sidebar w-52 bg-white border-r border-gray-100 flex flex-col py-3 px-2 shrink-0">
           <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider px-2 mb-2">Tools</p>
           <nav className="flex flex-col gap-0.5">
             <TabBtn icon={Icon.chat} label="Chat" active={tab === "chat"} onClick={() => setTab("chat")} />
@@ -665,10 +665,10 @@ useEffect(() => {
         </aside>
 
         {/* ── Center: chat ── */}
-        <main className={`flex flex-col flex-1 overflow-hidden ${tab !== "chat" ? "hidden md:flex" : "flex"}`}>
+        <main className={`chat-main flex flex-col flex-1 overflow-hidden ${tab !== "chat" ? "hidden md:flex" : "flex"}`}>
 
           {/* Mobile tab bar */}
-          <div className="md:hidden flex border-b border-gray-100 bg-white px-2 py-1.5 gap-1 shrink-0">
+          <div className="chat-mobile-tabs md:hidden flex border-b border-gray-100 bg-white px-2 py-1.5 gap-1 shrink-0">
             {[
               { id: "chat", icon: Icon.chat, label: "Chat" },
               { id: "summary", icon: Icon.summary, label: "Summary" },
@@ -684,7 +684,7 @@ useEffect(() => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+          <div className="chat-messages flex-1 overflow-y-auto px-4 py-6 space-y-6">
             {messages.map((msg, i) => <MessageBubble key={i} msg={msg} />)}
             {loading && <TypingIndicator />}
 
@@ -705,8 +705,8 @@ useEffect(() => {
           </div>
 
           {/* Input */}
-          <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-100">
-            <div className="flex gap-2 items-end bg-white border border-gray-200 rounded-2xl px-4 py-3
+          <div className="chat-input-panel shrink-0 px-4 py-3 bg-white border-t border-gray-100">
+            <div className="chat-input-row flex gap-2 items-end bg-white border border-gray-200 rounded-2xl px-4 py-3
                             focus-within:border-gray-400 transition-colors shadow-sm">
               <textarea
   ref={inputRef}
@@ -735,7 +735,7 @@ disabled={!input.trim() || loading || !doc || doc.status === 'pending'}
         </main>
 
         {/* ── Right panel: tools ── */}
-        <aside className={`w-80 bg-white border-l border-gray-100 flex flex-col overflow-hidden
+        <aside className={`chat-right-panel w-80 bg-white border-l border-gray-100 flex flex-col overflow-hidden
           ${tab === "chat" ? "hidden md:flex" : "flex flex-1 md:flex-none md:w-80"}`}>
 
           {/* Panel header */}

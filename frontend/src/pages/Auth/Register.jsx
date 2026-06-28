@@ -95,11 +95,18 @@ export default function RegisterPage() {
 };
 
   return (
-    <div style={{ background: "white", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", paddingTop: "76px", paddingBottom: "48px", position: "relative", overflowX: "hidden" }}>
+    <div className="auth-page" style={{ background: "white", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", paddingTop: "76px", paddingBottom: "48px", position: "relative", overflowX: "hidden" }}>
       <style>{`
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        @media (max-width: 640px) {
+          .auth-page { padding: 20px 16px 32px !important; padding-top: 76px !important; }
+          .auth-nav { padding: 0 16px !important; }
+          .auth-card { padding: 28px 20px !important; }
+          .auth-card h1 { font-size: 22px !important; }
+        }
       `}</style>
 
       {/* Subtle grid bg */}
@@ -109,7 +116,7 @@ export default function RegisterPage() {
       <div style={{ position: "fixed", bottom: "-80px", right: "-80px", width: "300px", height: "300px", borderRadius: "50%", background: "radial-gradient(circle,#f5f5f5 0%,transparent 70%)", pointerEvents: "none" }} />
 
       {/* Navbar */}
-      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, height: "52px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", padding: "0 2rem", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", zIndex: 10 }}>
+      <nav className="auth-nav" style={{ position: "fixed", top: 0, left: 0, right: 0, height: "52px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", padding: "0 2rem", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }} onClick={() => navigate("/")}>
           <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: "#111", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -133,7 +140,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Card */}
-        <div style={{ background: "white", border: "1px solid #ebebeb", borderRadius: "20px", padding: "40px 36px", boxShadow: "0 4px 32px rgba(0,0,0,0.05)" }}>
+        <div className="auth-card" style={{ background: "white", border: "1px solid #ebebeb", borderRadius: "20px", padding: "40px 36px", boxShadow: "0 4px 32px rgba(0,0,0,0.05)" }}>
           <h1 style={{ fontSize: "26px", fontWeight: "700", color: "#0a0a0a", letterSpacing: "-0.8px", marginBottom: "6px" }}>
             Create your workspace
           </h1>
